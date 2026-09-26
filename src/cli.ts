@@ -1,11 +1,12 @@
 import { appendFileSync } from "node:fs";
+import { books } from "./books.js";
 import { env, MINTS } from "./config.js";
-import { FileLedger, burnUsdPerDay, verifyChain } from "./ledger.js";
-import { pickTier, runwayDays, solvencyStatus } from "./metabolism.js";
+import { FileLedger } from "./ledger.js";
+import { ReserveMeter } from "./meter.js";
 import { usdPrice } from "./prices.js";
+import { createProxy } from "./proxy.js";
 import { solscanTx, walletBalances } from "./solana.js";
 import {
-  chat,
   listModels,
   registerToken,
   solanaRail,
@@ -75,30 +76,30 @@ const commands: Record<string, () => Promise<void>> = {
     console.log(`Deposited $${usd} into the compute reserve: ${solscanTx(sig)} (ledger #${e.seq})`);
   },
 
-  /** One thought, paid from the prepaid reserve, with the model chosen by runway. */
+  /** One thought through the same code path as the proxy: paid from the reserve, model chosen by runway. */
   async think() {
     const prompt = positional[0];
     if (!prompt) throw new Error('usage: think "<prompt>"');
     const token = requireToken();
-    const reserveBefore = (await tokenBalanceMicros(token)) / 1e6;
-    const runway = runwayDays(reserveBefore, burnUsdPerDay(ledger.all()));
-    const tier = pickTier(runway);
-    if (tier.name === "dormant") throw new Error(`Dormant: reserve $${reserveBefore.toFixed(4)} cannot fund thinking`);
-    const res = await chat(
-      token,
-      { model: tier.model, max_tokens: tier.maxTokens, messages: [{ role: "user", content: prompt }] },
-      { ceiling: tier.ceiling },
-    );
-    if (res.status !== 200) throw new Error(`UsePod ${res.status}: ${JSON.stringify(res.body).slice(0, 400)}`);
-    const after = res.balanceRemainingMicros != null ? res.balanceRemainingMicros / 1e6 : reserveBefore;
-    const cost = Math.max(0, reserveBefore - after);
-    const e = ledger.append({
-      kind: "thought",
-      usd: -cost,
-      meta: { tier: tier.name, model: tier.model, route: res.route, provider: res.providerId, usage: res.usage },
+    const meter = new ReserveMeter(() => tokenBalanceMicros(token));
+    await meter.init();
+    const app = createProxy({ apiToken: token, ledger, meter });
+    const res = await app.request("/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ model: "auto", messages: [{ role: "user", content: prompt }] }),
     });
-    console.log(res.body?.choices?.[0]?.message?.content);
-    console.log({ tier: tier.name, model: tier.model, costUsd: cost, reserveUsd: after, runwayDays: runway, ledger: e.seq });
+    const body = (await res.json()) as any;
+    if (res.status !== 200) throw new Error(`${res.status}: ${JSON.stringify(body).slice(0, 400)}`);
+    console.log(body?.choices?.[0]?.message?.content);
+    console.log({
+      tier: res.headers.get("x-solvent-tier"),
+      model: res.headers.get("x-solvent-model"),
+      costUsd: Number(res.headers.get("x-solvent-cost-usd")),
+      reserveUsd: meter.reserveUsd,
+      runwayDays: res.headers.get("x-solvent-runway-days"),
+      ledger: ledger.head()?.seq,
+    });
   },
 
   /** One thought paid per request via x402, straight from the wallet on-chain. */
@@ -128,20 +129,8 @@ const commands: Record<string, () => Promise<void>> = {
 
   /** Books: reserve, burn, runway, status, and ledger integrity. */
   async status() {
-    const entries = ledger.all();
-    const broken = verifyChain(entries);
     const reserve = env.USEPOD_API_TOKEN ? (await tokenBalanceMicros(env.USEPOD_API_TOKEN)) / 1e6 : 0;
-    const burn = burnUsdPerDay(entries);
-    const runway = runwayDays(reserve, burn);
-    console.log({
-      reserveUsd: reserve,
-      burnUsdPerDay: +burn.toFixed(6),
-      runwayDays: Number.isFinite(runway) ? +runway.toFixed(1) : "∞",
-      status: solvencyStatus(runway),
-      tier: pickTier(runway).name,
-      ledgerEntries: entries.length,
-      ledgerIntact: broken === -1 ? true : `broken at #${broken}`,
-    });
+    console.log(books(ledger.all(), reserve));
   },
 };
 

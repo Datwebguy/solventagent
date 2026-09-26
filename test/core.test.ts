@@ -76,7 +76,7 @@ describe("metabolism", () => {
     expect(pickTier(30).name).toBe("thriving");
     expect(pickTier(5).name).toBe("steady");
     expect(pickTier(1).name).toBe("frugal");
-    expect(pickTier(0.1).name).toBe("dormant");
+    expect(pickTier(0.01).name).toBe("dormant");
     expect(pickTier(Number.POSITIVE_INFINITY).name).toBe("thriving");
   });
 

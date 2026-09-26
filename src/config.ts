@@ -17,6 +17,10 @@ const Env = z.object({
   SOLVENT_MAX_TX_USD: z.coerce.number().positive().default(5),
   SOLVENT_MAX_DAY_USD: z.coerce.number().positive().default(10),
   SOLVENT_DATA_DIR: z.string().default("data"),
+  // Drop-in proxy. It spends the reserve, so it binds to loopback unless a key is set.
+  SOLVENT_PROXY_HOST: z.string().default("127.0.0.1"),
+  SOLVENT_PROXY_PORT: z.coerce.number().int().positive().default(8787),
+  SOLVENT_PROXY_KEY: z.string().min(24).optional(),
 });
 
 export type Env = z.infer<typeof Env>;
