@@ -72,14 +72,27 @@ function podHeaders(ceiling?: PriceCeiling, routingMode?: RoutingMode): Record<s
   return h;
 }
 
+/**
+ * Parses UsePod's X-Balance-Remaining into USDC microunits. Accepts integer microunits or a
+ * decimal dollar amount (optionally with a unit, e.g. "1.98 USDC"); anything else is undefined.
+ */
+export function parseBalanceHeader(raw: string | null): number | undefined {
+  if (raw == null) return undefined;
+  const m = raw.trim().match(/^\$?\s*(\d+(?:\.\d+)?)/);
+  if (!m) return undefined;
+  const n = Number(m[1]);
+  if (!Number.isFinite(n)) return undefined;
+  return m[1]!.includes(".") ? Math.round(n * 1e6) : n;
+}
+
 function readResult(res: Response, body: any): ChatResult {
-  const bal = res.headers.get("x-balance-remaining");
+  const bal = parseBalanceHeader(res.headers.get("x-balance-remaining"));
   return {
     status: res.status,
     body,
     route: res.headers.get("x-pod-route") ?? undefined,
     providerId: res.headers.get("x-pod-provider-id") ?? undefined,
-    balanceRemainingMicros: bal != null ? Number(bal) : undefined,
+    balanceRemainingMicros: bal,
     usage: body?.usage,
   };
 }

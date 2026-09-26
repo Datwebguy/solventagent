@@ -36,7 +36,13 @@ export async function writeReport(audit: Audit, apiToken: string): Promise<Repor
     );
     if (res.status === 503) continue;
     if (res.status !== 200) throw new Error(`report generation failed: ${res.status} ${JSON.stringify(res.body).slice(0, 200)}`);
-    const after = res.balanceRemainingMicros ?? (await tokenBalanceMicros(apiToken));
+    // UsePod settles shortly after answering; wait briefly for the charge to show.
+    let after = res.balanceRemainingMicros ?? before;
+    for (const ms of [0, 750, 1500, 3000]) {
+      if (after < before) break;
+      if (ms) await new Promise((r) => setTimeout(r, ms));
+      after = await tokenBalanceMicros(apiToken);
+    }
     return {
       markdown: String(res.body?.choices?.[0]?.message?.content ?? ""),
       model,

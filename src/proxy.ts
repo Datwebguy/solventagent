@@ -4,7 +4,7 @@ import { books } from "./books.js";
 import { burnUsdPerDay, type Entry, type EntryInput } from "./ledger.js";
 import { DEFAULT_TIERS, pickTier, runwayDays, type Tier } from "./metabolism.js";
 import type { ReserveMeter } from "./meter.js";
-import { USEPOD_API } from "./usepod/client.js";
+import { parseBalanceHeader, USEPOD_API } from "./usepod/client.js";
 
 export interface LedgerLike {
   all(): Entry[];
@@ -196,8 +196,8 @@ export function createProxy(opts: ProxyOptions): Hono & { drain(): Promise<void>
 
       const text = await res.text();
       if (res.ok) {
-        const h = res.headers.get("x-balance-remaining");
-        const immediate = h != null && h !== "" ? opts.meter.observe(Number(h)) : 0;
+        const remaining = parseBalanceHeader(res.headers.get("x-balance-remaining"));
+        const immediate = remaining != null ? opts.meter.observe(remaining) : 0;
         let usage: unknown;
         try {
           usage = JSON.parse(text)?.usage;

@@ -57,3 +57,20 @@ describe("withExtraComputeUnits", () => {
     expect(unitsOf(withExtraComputeUnits([ComputeBudgetProgram.setComputeUnitLimit({ units: 1_390_000 })], 60_000))).toEqual([1_400_000]);
   });
 });
+
+import { parseBalanceHeader } from "../src/usepod/client.js";
+
+describe("parseBalanceHeader", () => {
+  it("reads integer microunits and decimal dollars", () => {
+    expect(parseBalanceHeader("1987850")).toBe(1_987_850);
+    expect(parseBalanceHeader("1.98785")).toBe(1_987_850);
+    expect(parseBalanceHeader("$1.98785")).toBe(1_987_850);
+    expect(parseBalanceHeader("1.98785 USDC")).toBe(1_987_850);
+  });
+
+  it("returns undefined for missing or unreadable values instead of NaN", () => {
+    expect(parseBalanceHeader(null)).toBeUndefined();
+    expect(parseBalanceHeader("")).toBeUndefined();
+    expect(parseBalanceHeader("unknown")).toBeUndefined();
+  });
+});
