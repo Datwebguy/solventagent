@@ -7,7 +7,6 @@ import {
   sendAndConfirmTransaction,
   type Keypair,
 } from "@solana/web3.js";
-import { getAssociatedTokenAddressSync } from "@solana/spl-token";
 import { env, MINTS } from "./config.js";
 
 export const MEMO_PROGRAM_ID = new PublicKey("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr");
@@ -51,15 +50,13 @@ export async function getParsedTx(sig: string, conn: Connection = readConnection
   }
 }
 
-/** Balance of an SPL token in UI units (0 when the account does not exist). */
+/**
+ * Balance of a token in UI units, summed over every account the owner holds for that mint.
+ * Works for classic SPL and Token-2022 mints (pump.fun tokens such as $ANSEM are Token-2022).
+ */
 export async function tokenBalance(owner: PublicKey, mint: string): Promise<number> {
-  const ata = getAssociatedTokenAddressSync(new PublicKey(mint), owner, true);
-  try {
-    const res = await connection().getTokenAccountBalance(ata);
-    return Number(res.value.uiAmountString ?? 0);
-  } catch {
-    return 0;
-  }
+  const res = await withRetry(() => readConnection().getParsedTokenAccountsByOwner(owner, { mint: new PublicKey(mint) }));
+  return res.value.reduce((sum, a) => sum + Number(a.account.data.parsed?.info?.tokenAmount?.uiAmountString ?? 0), 0);
 }
 
 export async function solBalance(owner: PublicKey): Promise<number> {
