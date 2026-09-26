@@ -4,7 +4,8 @@ import { z } from "zod";
 config({ quiet: true });
 
 const Env = z.object({
-  SOLANA_RPC_URL: z.url().default("https://api.mainnet-beta.solana.com"),
+  // PublicNode serves batched reads without a key; the Solana public RPC rate-limits them.
+  SOLANA_RPC_URL: z.url().default("https://solana-rpc.publicnode.com"),
   // Treasury key: base58 (Phantom/Solflare export) or a JSON byte array. Never logged.
   SOLVENT_TREASURY_SECRET: z.string().optional(),
   SOLVENT_TREASURY_KEYPAIR_PATH: z.string().optional(),

@@ -14,6 +14,19 @@ export const MEMO_PROGRAM_ID = new PublicKey("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqX
 let conn: Connection | undefined;
 export const connection = () => (conn ??= new Connection(env.SOLANA_RPC_URL, "confirmed"));
 
+/** Retries RPC reads that hit rate limits (429), backing off 0.5s, 1s, 2s, 4s. */
+export async function withRetry<T>(fn: () => Promise<T>, tries = 5): Promise<T> {
+  for (let i = 0; ; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (i >= tries - 1 || !/429|Too many requests/i.test(msg)) throw err;
+      await new Promise((r) => setTimeout(r, 500 * 2 ** i));
+    }
+  }
+}
+
 /** Balance of an SPL token in UI units (0 when the account does not exist). */
 export async function tokenBalance(owner: PublicKey, mint: string): Promise<number> {
   const ata = getAssociatedTokenAddressSync(new PublicKey(mint), owner, true);

@@ -1,4 +1,4 @@
-import { appendFileSync, mkdirSync, readFileSync } from "node:fs";
+import { appendFileSync, mkdirSync, readFileSync, rmSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { env } from "./config.js";
 import { canonicalJson, sha256 } from "./policy.js";
@@ -59,6 +59,33 @@ export function verifyChain(entries: Entry[]): number {
   return -1;
 }
 
+const sleepSync = (ms: number) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+
+/** Cross-process mutex using an atomic mkdir; locks older than 30s are treated as stale. */
+function withFileLock<T>(lockPath: string, fn: () => T): T {
+  const deadline = Date.now() + 5_000;
+  for (;;) {
+    try {
+      mkdirSync(lockPath);
+      break;
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code !== "EEXIST") throw err;
+      try {
+        if (Date.now() - statSync(lockPath).mtimeMs > 30_000) rmSync(lockPath, { recursive: true, force: true });
+      } catch {
+        // lock vanished between checks; retry
+      }
+      if (Date.now() > deadline) throw new Error(`ledger is locked by another process (${lockPath})`);
+      sleepSync(20);
+    }
+  }
+  try {
+    return fn();
+  } finally {
+    rmSync(lockPath, { recursive: true, force: true });
+  }
+}
+
 /** Append-only JSONL ledger on disk. */
 export class FileLedger {
   constructor(private readonly path = join(env.SOLVENT_DATA_DIR, "ledger.jsonl")) {}
@@ -75,11 +102,14 @@ export class FileLedger {
   }
 
   append(input: EntryInput): Entry {
-    const entries = this.all();
-    const e = chain(entries[entries.length - 1], input);
     mkdirSync(join(this.path, ".."), { recursive: true });
-    appendFileSync(this.path, JSON.stringify(e) + "\n");
-    return e;
+    // The proxy, CLI and MCP server may all append; a lock keeps the hash chain linear.
+    return withFileLock(`${this.path}.lock`, () => {
+      const entries = this.all();
+      const e = chain(entries[entries.length - 1], input);
+      appendFileSync(this.path, JSON.stringify(e) + "\n");
+      return e;
+    });
   }
 
   head(): Entry | undefined {

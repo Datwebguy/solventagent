@@ -1,5 +1,5 @@
 import type { ParsedTransactionWithMeta, PublicKey } from "@solana/web3.js";
-import { connection } from "./solana.js";
+import { connection, withRetry } from "./solana.js";
 
 /**
  * ClawPump's buyback wallet. Every creator-fee payout transaction sends it 12.5% alongside
@@ -59,11 +59,13 @@ export async function fetchInflows(
   incomeSources: Set<string>,
   untilSignature?: string,
 ): Promise<{ inflows: Inflow[]; newest: string | undefined }> {
-  const sigs = await connection().getSignaturesForAddress(treasury, { until: untilSignature, limit: 200 });
+  const sigs = await withRetry(() => connection().getSignaturesForAddress(treasury, { until: untilSignature, limit: 200 }));
   const newest = sigs[0]?.signature ?? untilSignature;
   const inflows: Inflow[] = [];
   for (const s of sigs.filter((x) => !x.err).reverse()) {
-    const tx = await connection().getParsedTransaction(s.signature, { maxSupportedTransactionVersion: 0, commitment: "confirmed" });
+    const tx = await withRetry(() =>
+      connection().getParsedTransaction(s.signature, { maxSupportedTransactionVersion: 0, commitment: "confirmed" }),
+    );
     if (!tx) continue;
     const inflow = classifyInflow(tx, s.signature, treasury.toBase58(), incomeSources);
     if (inflow) inflows.push(inflow);
@@ -73,6 +75,6 @@ export async function fetchInflows(
 
 /** Newest signature touching the treasury, used as the cursor for the next cycle. */
 export async function latestSignature(treasury: PublicKey): Promise<string | undefined> {
-  const [s] = await connection().getSignaturesForAddress(treasury, { limit: 1 });
+  const [s] = await withRetry(() => connection().getSignaturesForAddress(treasury, { limit: 1 }));
   return s?.signature;
 }
