@@ -1,7 +1,8 @@
 import { config } from "dotenv";
 import { z } from "zod";
 
-config({ quiet: true });
+// .env holds your secrets; .env.local is written by `vercel link` / `vercel env pull`.
+config({ path: [".env", ".env.local"], quiet: true });
 
 const Env = z.object({
   // PublicNode serves batched reads without a key; the Solana public RPC rate-limits them.

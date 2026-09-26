@@ -5,7 +5,7 @@
   "description": "The CFO for agentic companies: agents pay for their own inference from their own income, with public books.",
   "type": "module",
   "engines": {
-    "node": ">=22"
+    "node": "24.x"
   },
   "scripts": {
     "cli": "tsx src/cli.ts",
@@ -29,5 +29,10 @@
     "tsx": "^4.23.15",
     "typescript": "^5.9.3",
     "vitest": "^5.0.2"
+  },
+  "overrides": {
+    "rpc-websockets": {
+      "uuid": "11.1.1"
+    }
   }
 }
