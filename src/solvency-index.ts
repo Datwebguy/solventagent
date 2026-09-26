@@ -1,5 +1,5 @@
 import { auditWallet, type Audit } from "./audit.js";
-import { CLAWPUMP_BUYBACK_WALLET } from "./income.js";
+import { CLAWPUMP_BUYBACK_WALLET, CLAWPUMP_PLATFORM_WALLET, isClawPumpPayout } from "./income.js";
 import { readConnection, withRetry } from "./solana.js";
 
 /** Read-through for public ClawPump pages (they render client-side, so fetch via a reader). */
@@ -35,7 +35,7 @@ export async function fetchLeaderboard(): Promise<Omit<IndexEntry, "payoutWallet
 
 /**
  * The agent's payout wallet: the ~75% leg of a ClawPump fee payout listed on the token page.
- * A payout is recognised by its 12.5% leg to ClawPump's buyback wallet.
+ * A payout is recognised by its leg to ClawPump's platform (or buyback) wallet.
  */
 export async function findPayoutWallet(mint: string): Promise<string | null> {
   const md = await (await fetch(reader(`https://clawpump.tech/tokens/${mint}`), { headers: { "X-Return-Format": "markdown" } })).text();
@@ -48,8 +48,10 @@ export async function findPayoutWallet(mint: string): Promise<string | null> {
         ? [ix.parsed.info as { destination: string; lamports: number }]
         : [],
     );
-    if (!transfers.some((t) => t.destination === CLAWPUMP_BUYBACK_WALLET)) continue;
-    const largest = transfers.filter((t) => t.destination !== CLAWPUMP_BUYBACK_WALLET).sort((a, b) => b.lamports - a.lamports)[0];
+    if (!isClawPumpPayout(transfers.map((t) => t.destination))) continue;
+    const largest = transfers
+      .filter((t) => t.destination !== CLAWPUMP_BUYBACK_WALLET && t.destination !== CLAWPUMP_PLATFORM_WALLET)
+      .sort((a, b) => b.lamports - a.lamports)[0];
     if (largest) return largest.destination;
   }
   return null;

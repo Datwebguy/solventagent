@@ -20,14 +20,14 @@ const readers = READ_URLS.map((u) => new Connection(u, { commitment: "confirmed"
 let nextReader = 0;
 export const readConnection = () => readers[nextReader++ % readers.length]!;
 
-/** Retries RPC reads that hit rate limits (429), backing off exponentially up to 10s. */
+/** Retries RPC reads that hit rate limits (429) or dropped connections, backing off up to 10s. */
 export async function withRetry<T>(fn: () => Promise<T>, tries = 8): Promise<T> {
   for (let i = 0; ; i++) {
     try {
       return await fn();
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      if (i >= tries - 1 || !/429|Too many requests/i.test(msg)) throw err;
+      if (i >= tries - 1 || !/429|Too many requests|fetch failed|ECONNRESET|ETIMEDOUT|socket hang up/i.test(msg)) throw err;
       await new Promise((r) => setTimeout(r, Math.min(10_000, 500 * 2 ** i)));
     }
   }

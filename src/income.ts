@@ -2,11 +2,20 @@ import type { ParsedTransactionWithMeta, PublicKey } from "@solana/web3.js";
 import { connection, withRetry } from "./solana.js";
 
 /**
- * ClawPump's buyback wallet. Every creator-fee payout transaction sends it 12.5% alongside
- * the ~75% agent share, which makes it a reliable fingerprint for fee income.
- * (Verified on payouts to SelfMade, Ansem.tips, BEARPROOF and Steve, 2026-09-26.)
+ * ClawPump's buyback wallet. Most creator-fee payouts send it 12.5% alongside the ~75% agent
+ * share (seen on SelfMade, Ansem.tips, BEARPROOF and Steve, 2026-09-26).
  */
 export const CLAWPUMP_BUYBACK_WALLET = "CgzAtK78rvrgi6BHa6LETqRd5iQzDtdUdtupERPNdwn3";
+
+/**
+ * ClawPump's platform fee wallet. It receives a leg of every creator-fee payout, including the
+ * direct pump.fun-share payouts that have no buyback leg (verified on PUMP.RPG, 2026-09-26).
+ */
+export const CLAWPUMP_PLATFORM_WALLET = "CeFF6QCFiu3dnK4zDK8sTErxGG8at8mSoVKUx9D4bGtM";
+
+/** True when a set of transfers has the shape of a ClawPump creator-fee payout. */
+export const isClawPumpPayout = (destinations: string[]) =>
+  destinations.some((d) => d === CLAWPUMP_PLATFORM_WALLET || d === CLAWPUMP_BUYBACK_WALLET);
 
 export interface Inflow {
   signature: string;
@@ -42,7 +51,7 @@ export function classifyInflow(tx: ParsedTransactionWithMeta, signature: string,
   const received = transfers.filter((t) => t.destination === treasury && t.source !== treasury);
   const lamports = received.reduce((s, t) => s + t.lamports, 0);
   if (lamports <= 0) return undefined;
-  const source = transfers.some((t) => t.destination === CLAWPUMP_BUYBACK_WALLET)
+  const source = isClawPumpPayout(transfers.map((t) => t.destination))
     ? "clawpump_fees"
     : received.some((t) => incomeSources.has(t.source))
       ? "income_source"

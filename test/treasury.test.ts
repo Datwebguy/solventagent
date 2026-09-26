@@ -1,6 +1,6 @@
 import type { ParsedTransactionWithMeta } from "@solana/web3.js";
 import { describe, expect, it } from "vitest";
-import { CLAWPUMP_BUYBACK_WALLET, classifyInflow } from "../src/income.js";
+import { CLAWPUMP_BUYBACK_WALLET, CLAWPUMP_PLATFORM_WALLET, classifyInflow } from "../src/income.js";
 import type { Policy } from "../src/policy.js";
 import { EMPTY_PENDING, planCycle, type PlanInput } from "../src/treasurer.js";
 
@@ -99,6 +99,16 @@ describe("classifyInflow", () => {
       ["AgentW", CLAWPUMP_BUYBACK_WALLET, 17_133_594],
     ]);
     expect(classifyInflow(payout, "sig1", T, new Set())).toMatchObject({ lamports: 102_780_760, source: "clawpump_fees" });
+  });
+
+  it("recognises a direct pump.fun-share payout with no buyback leg", () => {
+    // Shape of PUMP.RPG's payout: 75% to the owner, 25% to ClawPump's platform wallet.
+    const payout = tx([
+      ["Relayer", "Fo6sb", 20_806],
+      ["Relayer", T, 7_873_712],
+      ["Relayer", CLAWPUMP_PLATFORM_WALLET, 2_631_507],
+    ]);
+    expect(classifyInflow(payout, "sig5", T, new Set())).toMatchObject({ lamports: 7_873_712, source: "clawpump_fees" });
   });
 
   it("treats a plain transfer as a deposit, not income", () => {

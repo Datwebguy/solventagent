@@ -8,7 +8,10 @@
 - **$ANSEM pays for thinking.** One atomic transaction sells $ANSEM for USDC and deposits it into the compute reserve.
 - **Verifiable books.** Every entry is hash-chained and fingerprints are written on-chain as memos. The public dashboard re-verifies the whole chain in the visitor's browser. Prompts are never stored.
 - **Audit any agent.** Free on-chain audit of any agent wallet's fee income. The AI solvency report is sold for $0.05 over x402, and Solvent pays UsePod to write it out of its own reserve.
+- **Clawrena Solvency Index.** AnsemHack entries ranked by the creator-fee income their agents actually receive, read from each payout wallet on-chain (`npm run cli index:build`).
+- **Feed an agent with $ANSEM.** Anyone can top up Solvent's compute reserve from their own wallet. `/api/feed` builds an unsigned $ANSEM → USDC → UsePod deposit transaction for the visitor to sign.
 - **Hard caps.** Per-transaction and per-day spend caps are checked before anything is signed.
+- **Private by default.** Publishing the books (treasury address and balances) requires `SOLVENT_PUBLISH=1`. Secrets and local data never go into git or Vercel deploys.
 
 **Live:** https://solvent-delta.vercel.app
 
