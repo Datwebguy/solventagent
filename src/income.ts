@@ -1,5 +1,5 @@
 import type { ParsedTransactionWithMeta, PublicKey } from "@solana/web3.js";
-import { connection, withRetry } from "./solana.js";
+import { connection, getParsedTx, withRetry } from "./solana.js";
 
 /**
  * ClawPump's buyback wallet. Most creator-fee payouts send it 12.5% alongside the ~75% agent
@@ -72,9 +72,7 @@ export async function fetchInflows(
   const newest = sigs[0]?.signature ?? untilSignature;
   const inflows: Inflow[] = [];
   for (const s of sigs.filter((x) => !x.err).reverse()) {
-    const tx = await withRetry(() =>
-      connection().getParsedTransaction(s.signature, { maxSupportedTransactionVersion: 0, commitment: "confirmed" }),
-    );
+    const tx = await getParsedTx(s.signature, connection());
     if (!tx) continue;
     const inflow = classifyInflow(tx, s.signature, treasury.toBase58(), incomeSources);
     if (inflow) inflows.push(inflow);

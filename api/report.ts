@@ -5,7 +5,7 @@ import { env } from "../src/config.js";
 import type { SaleRecord } from "../src/publish.js";
 import { writeReport } from "../src/report.js";
 import { makeQuoteId, paymentRequired, readQuoteId, SOLANA_MAINNET, verifyPayment } from "../src/sell.js";
-import { connection } from "../src/solana.js";
+import { connection, getParsedTx } from "../src/solana.js";
 
 const b64 = (v: unknown) => Buffer.from(JSON.stringify(v)).toString("base64");
 const blob = { access: "public" as const, addRandomSuffix: false, allowOverwrite: true, contentType: "application/json" };
@@ -51,7 +51,7 @@ export async function POST(request: Request): Promise<Response> {
       // first settlement for this payment
     }
 
-    const tx = await connection().getParsedTransaction(proof.signature, { maxSupportedTransactionVersion: 0, commitment: "confirmed" });
+    const tx = await getParsedTx(proof.signature, connection());
     verifyPayment(tx, claims);
 
     const audit = await auditWallet(wallet);

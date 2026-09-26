@@ -1,5 +1,6 @@
 import {
   Connection,
+  type ParsedTransactionWithMeta,
   PublicKey,
   Transaction,
   TransactionInstruction,
@@ -30,6 +31,23 @@ export async function withRetry<T>(fn: () => Promise<T>, tries = 8): Promise<T> 
       if (i >= tries - 1 || !/429|Too many requests|fetch failed|ECONNRESET|ETIMEDOUT|socket hang up/i.test(msg)) throw err;
       await new Promise((r) => setTimeout(r, Math.min(10_000, 500 * 2 ** i)));
     }
+  }
+}
+
+/**
+ * Parsed transaction, accepting any version the RPC can return (v0 and the newer v1).
+ * Returns null instead of throwing when a transaction cannot be read, so one odd
+ * transaction never breaks a whole scan.
+ */
+export async function getParsedTx(sig: string, conn: Connection = readConnection()): Promise<ParsedTransactionWithMeta | null> {
+  try {
+    return await withRetry(() =>
+      conn.getParsedTransaction(sig, { maxSupportedTransactionVersion: 1 as 0, commitment: "confirmed" }),
+    );
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (/version|not supported|parse/i.test(msg)) return null;
+    throw err;
   }
 }
 

@@ -3,7 +3,7 @@ import { MINTS } from "./config.js";
 import { classifyInflow } from "./income.js";
 import { DEFAULT_TIERS } from "./metabolism.js";
 import { usdPrices } from "./prices.js";
-import { readConnection, solBalance, tokenBalance, withRetry } from "./solana.js";
+import { getParsedTx, readConnection, solBalance, tokenBalance, withRetry } from "./solana.js";
 
 export interface Audit {
   address: string;
@@ -35,7 +35,7 @@ export async function auditWallet(address: string, maxTransactions = 150, now = 
   for (let i = 0; i < sigs.length; i += 3) {
     const batch = sigs.slice(i, i + 3);
     const txs = await Promise.all(
-      batch.map((s) => withRetry(() => readConnection().getParsedTransaction(s.signature, { maxSupportedTransactionVersion: 0 }))),
+      batch.map((s) => getParsedTx(s.signature)),
     );
     txs.forEach((tx, j) => {
       if (!tx) return;

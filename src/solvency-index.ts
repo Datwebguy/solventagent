@@ -1,6 +1,6 @@
 import { auditWallet, type Audit } from "./audit.js";
 import { CLAWPUMP_BUYBACK_WALLET, CLAWPUMP_PLATFORM_WALLET, isClawPumpPayout } from "./income.js";
-import { readConnection, withRetry } from "./solana.js";
+import { getParsedTx } from "./solana.js";
 
 /** Read-through for public ClawPump pages (they render client-side, so fetch via a reader). */
 const reader = (url: string) => `https://r.jina.ai/${url}`;
@@ -41,7 +41,7 @@ export async function findPayoutWallet(mint: string): Promise<string | null> {
   const md = await (await fetch(reader(`https://clawpump.tech/tokens/${mint}`), { headers: { "X-Return-Format": "markdown" } })).text();
   const sigs = [...md.matchAll(/solscan\.io\/tx\/([1-9A-HJ-NP-Za-km-z]{80,90})/g)].map((m) => m[1]!).slice(0, 8);
   for (const sig of sigs) {
-    const tx = await withRetry(() => readConnection().getParsedTransaction(sig, { maxSupportedTransactionVersion: 0 }));
+    const tx = await getParsedTx(sig);
     if (!tx) continue;
     const transfers = tx.transaction.message.instructions.flatMap((ix) =>
       "parsed" in ix && ix.program === "system" && ix.parsed?.type === "transfer"

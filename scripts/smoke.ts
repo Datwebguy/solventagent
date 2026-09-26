@@ -6,7 +6,7 @@ import { MINTS } from "../src/config.js";
 import { classifyInflow } from "../src/income.js";
 import { jupQuote } from "../src/jupiter.js";
 import { usdPrices } from "../src/prices.js";
-import { connection } from "../src/solana.js";
+import { connection, getParsedTx } from "../src/solana.js";
 import { solanaRail, x402Quote } from "../src/usepod/client.js";
 
 // A real ClawPump creator-fee payout (SelfMade by SP3ND, 2026-09-26) and its recipient.
@@ -45,7 +45,7 @@ const checks: [string, () => Promise<string>][] = [
   [
     "income detector on a real ClawPump payout",
     async () => {
-      const tx = await connection().getParsedTransaction(PAYOUT_SIG, { maxSupportedTransactionVersion: 0 });
+      const tx = await getParsedTx(PAYOUT_SIG, connection());
       if (!tx) throw new Error("payout transaction not found");
       const inflow = classifyInflow(tx, PAYOUT_SIG, PAYOUT_RECIPIENT, new Set());
       if (inflow?.source !== "clawpump_fees") throw new Error(`misclassified: ${JSON.stringify(inflow)}`);
