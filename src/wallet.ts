@@ -20,7 +20,7 @@ export function parseSecretKey(raw: string): Uint8Array {
 
 export function loadTreasury(): Keypair {
   const raw =
-    env.SOLVENT_TREASURY_SECRET ??
+    env.SOLVENT_TREASURY_SECRET ||
     (env.SOLVENT_TREASURY_KEYPAIR_PATH
       ? readFileSync(env.SOLVENT_TREASURY_KEYPAIR_PATH, "utf8")
       : undefined);

@@ -11,3 +11,4 @@ dist/
 .env*
 solvent.policy.json
 !.env.example
+data-archive-*/
