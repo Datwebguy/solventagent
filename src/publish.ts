@@ -64,6 +64,9 @@ const blobOpts = (contentType: string) => ({
 
 /** Uploads the snapshot and the full ledger so the public dashboard can show and verify them. */
 export async function publish(ledger: FileLedger, reserveUsd: number): Promise<{ snapshotUrl: string; ledgerUrl: string }> {
+  if (!env.SOLVENT_PUBLISH) {
+    throw new Error("Publishing is off. It makes the treasury address and balances public; set SOLVENT_PUBLISH=1 to allow it.");
+  }
   if (!env.BLOB_READ_WRITE_TOKEN) throw new Error("BLOB_READ_WRITE_TOKEN is not set");
   const snap = await buildSnapshot(ledger, reserveUsd);
   const lines = ledger.all().map((e) => JSON.stringify(e)).join("\n");

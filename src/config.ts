@@ -29,6 +29,11 @@ const Env = z.object({
   SOLVENT_TOKEN_MINT: z.string().optional(),
   // Vercel Blob store used to publish the books for the public dashboard.
   BLOB_READ_WRITE_TOKEN: z.string().optional(),
+  // Publishing puts the treasury address and balances on the public site. Off unless set to "1".
+  SOLVENT_PUBLISH: z
+    .string()
+    .optional()
+    .transform((v) => v === "1" || v === "true"),
   // Public site settings (web side). The treasury address receives paid-audit payments.
   SOLVENT_TREASURY_ADDRESS: z.string().optional(),
   SOLVENT_AUDIT_PRICE_USD: z.coerce.number().positive().default(0.05),

@@ -1,0 +1,13 @@
+# Never upload secrets or local runtime data to Vercel.
+.env
+.env.*
+!.env.example
+.secrets
+data
+solvent.policy.json
+.git
+node_modules
+Dockerfile
+.dockerignore
+scripts
+test

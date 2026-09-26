@@ -269,10 +269,11 @@ async function loadBooks() {
     if (l.ok) entries = (await l.text()).split("\n").filter(Boolean).map((x) => JSON.parse(x));
   } catch {}
   if (!snap) {
-    $("statusBadge").textContent = "OFFLINE";
-    $("statusLine").textContent = "The agent has not published its books yet.";
-    $("ledgerRows").innerHTML = `<tr><td colspan="6" class="empty">No entries yet.</td></tr>`;
-    $("verify").textContent = "No ledger to verify yet.";
+    $("statusBadge").textContent = "SOON";
+    $("statusLine").textContent = "Solvent's own books go live when its dedicated treasury wallet is connected.";
+    $("runway").innerHTML = `— <small>days of thinking left</small>`;
+    $("ledgerRows").innerHTML = `<tr><td colspan="6" class="empty">The ledger appears here once the books are published. Meanwhile, audit any agent below.</td></tr>`;
+    $("verify").textContent = "Nothing to verify yet.";
     return;
   }
   const b = snap.books;

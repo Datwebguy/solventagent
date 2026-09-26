@@ -9,3 +9,5 @@ dist/
 
 .vercel
 .env*
+solvent.policy.json
+!.env.example

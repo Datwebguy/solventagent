@@ -40,7 +40,7 @@ setInterval(() => {
 }, 5 * 60_000);
 
 // Publish the books when they change (and at least every 10 minutes), booking paid-audit sales first.
-if (env.BLOB_READ_WRITE_TOKEN) {
+if (env.BLOB_READ_WRITE_TOKEN && env.SOLVENT_PUBLISH) {
   let lastHead: string | undefined;
   let lastAt = 0;
   const tick = async () => {
