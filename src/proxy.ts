@@ -20,6 +20,8 @@ export interface ProxyOptions {
   proxyKey?: string;
   upstream?: string;
   fetchImpl?: typeof fetch;
+  /** Balance checks after each call while waiting for UsePod to settle it. */
+  settleDelaysMs?: number[];
 }
 
 type Surface = "openai" | "anthropic";
@@ -47,7 +49,7 @@ function usageFromTail(tail: string): unknown {
  * OpenAI- and Anthropic-compatible proxy that pays for every call from the agent's
  * UsePod reserve, chooses the model tier from runway, and books each thought.
  */
-export function createProxy(opts: ProxyOptions): Hono {
+export function createProxy(opts: ProxyOptions): Hono & { drain(): Promise<void> } {
   const tiers = opts.tiers ?? DEFAULT_TIERS;
   const upstream = opts.upstream ?? USEPOD_API;
   const doFetch = opts.fetchImpl ?? fetch;
@@ -58,6 +60,26 @@ export function createProxy(opts: ProxyOptions): Hono {
     if (Date.now() - burnCache.at > 30_000) burnCache = { at: Date.now(), value: burnUsdPerDay(opts.ledger.all()) };
     return burnCache.value;
   };
+
+  // UsePod settles a call shortly after answering, so poll the balance before booking.
+  const pending = new Set<Promise<unknown>>();
+  const track = <T>(p: Promise<T>) => {
+    const guarded = p.catch((err) => console.error("solvent: failed to book thought:", err));
+    pending.add(guarded);
+    void guarded.finally(() => pending.delete(guarded));
+    return guarded;
+  };
+  const settleDelaysMs = opts.settleDelaysMs ?? [0, 750, 1500, 3000, 5000];
+  async function settleThenBook(immediate: number): Promise<{ micros: number; settled: boolean }> {
+    if (immediate > 0) return { micros: immediate, settled: true };
+    for (const ms of settleDelaysMs) {
+      if (ms) await new Promise((r) => setTimeout(r, ms));
+      const spent = await opts.meter.settle();
+      if (spent > 0) return { micros: spent, settled: true };
+    }
+    // Not visible yet; the periodic resync books any late charge as a reconciliation entry.
+    return { micros: 0, settled: false };
+  }
 
   const authorized = (c: Context) => {
     if (!opts.proxyKey) return true;
@@ -155,22 +177,18 @@ export function createProxy(opts: ProxyOptions): Hono {
       if (streaming && res.ok && res.body) {
         const decoder = new TextDecoder();
         let tail = "";
-        const meter = opts.meter;
         const response = res;
         const counted = new TransformStream<Uint8Array, Uint8Array>({
           transform(chunk, ctl) {
             ctl.enqueue(chunk);
             tail = (tail + decoder.decode(chunk, { stream: true })).slice(-8192);
           },
-          async flush() {
-            try {
-              const spent = await meter.settle();
-              book(surface, tier, model, spent, response, { stream: true, usage: usageFromTail(tail) });
-            } catch (err) {
-              console.error("solvent: failed to book streamed thought:", err);
-            } finally {
-              end();
-            }
+          flush() {
+            track(
+              settleThenBook(0).then((spent) =>
+                book(surface, tier, model, spent.micros, response, { stream: true, usage: usageFromTail(tail), costSettled: spent.settled }),
+              ),
+            ).finally(end);
           },
         });
         return new Response(res.body.pipeThrough(counted), { status: res.status, headers: out });
@@ -179,17 +197,20 @@ export function createProxy(opts: ProxyOptions): Hono {
       const text = await res.text();
       if (res.ok) {
         const h = res.headers.get("x-balance-remaining");
-        const spent = h != null && h !== "" ? opts.meter.observe(Number(h)) : await opts.meter.settle();
+        const immediate = h != null && h !== "" ? opts.meter.observe(Number(h)) : 0;
         let usage: unknown;
         try {
           usage = JSON.parse(text)?.usage;
         } catch {
           usage = undefined;
         }
-        book(surface, tier, model, spent, res, { stream: false, usage });
-        out.set("x-solvent-cost-usd", (spent / 1e6).toFixed(6));
+        // Answer now; book the cost once UsePod's settlement shows up in the balance.
+        track(
+          settleThenBook(immediate).then((spent) => book(surface, tier, model, spent.micros, res, { stream: false, usage, costSettled: spent.settled })),
+        ).finally(end);
+      } else {
+        end();
       }
-      end();
       return new Response(text, { status: res.status, headers: out });
     } catch (err) {
       end();
@@ -211,5 +232,9 @@ export function createProxy(opts: ProxyOptions): Hono {
   app.get("/solvent/books", (c) => c.json(books(opts.ledger.all(), opts.meter.reserveUsd, tiers)));
   app.get("/health", (c) => c.json({ ok: true }));
 
-  return app;
+  /** Resolves once every answered call has had its cost booked. */
+  const drain = async () => {
+    while (pending.size) await Promise.all([...pending]);
+  };
+  return Object.assign(app, { drain });
 }

@@ -20,6 +20,8 @@ export function books(entries: Entry[], reserveUsd: number, tiers: Tier[] = DEFA
   const burn = burnUsdPerDay(entries, now);
   const runway = runwayDays(reserveUsd, burn);
   const thoughts = entries.filter((e) => e.kind === "thought");
+  // Reconciliation entries correct costs of earlier thoughts; they are not thoughts themselves.
+  const calls = thoughts.filter((e) => e.meta?.via !== "reconciliation");
   return {
     reserveUsd,
     burnUsdPerDay: burn,
@@ -28,7 +30,7 @@ export function books(entries: Entry[], reserveUsd: number, tiers: Tier[] = DEFA
     tier: pickTier(runway, tiers).name,
     incomeUsd: entries.filter((e) => e.kind === "income").reduce((s, e) => s + e.usd, 0),
     spentOnThinkingUsd: thoughts.reduce((s, e) => s - e.usd, 0),
-    thoughts: thoughts.length,
+    thoughts: calls.length,
     ledgerEntries: entries.length,
     ledgerHead: entries[entries.length - 1]?.hash ?? null,
     ledgerIntact: verifyChain(entries) === -1,

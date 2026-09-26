@@ -19,7 +19,7 @@ import {
   x402Quote,
   x402Settle,
 } from "./usepod/client.js";
-import { depositFromToken, depositUsdc, payX402Rail } from "./usepod/pay.js";
+import { depositFromToken, depositSol, depositUsdc, payX402Rail } from "./usepod/pay.js";
 import { loadTreasury } from "./wallet.js";
 
 const [, , cmd, ...args] = process.argv;
@@ -70,12 +70,19 @@ const commands: Record<string, () => Promise<void>> = {
     console.log((await listModels(requireToken())).join("\n"));
   },
 
-  /** Tops up the compute reserve on-chain: npm run cli usepod:deposit 2 --yes */
+  /** Tops up the compute reserve on-chain: usepod:deposit 2 [--sol] --yes (--sol swaps SOL→USDC in the same tx) */
   async "usepod:deposit"() {
     const usd = Number(positional[0]);
-    if (!(usd > 0)) throw new Error("usage: usepod:deposit <usd> --yes");
+    if (!(usd > 0)) throw new Error("usage: usepod:deposit <usd> [--sol] --yes");
     requireYes("usepod:deposit");
     if (!env.USEPOD_DEPOSIT_CODE) throw new Error("USEPOD_DEPOSIT_CODE is not set");
+    if (flag("sol")) {
+      const lamports = BigInt(Math.floor((usd / (await usdPrice(MINTS.SOL))) * 1e9));
+      const r = await depositSol(loadTreasury(), env.USEPOD_DEPOSIT_CODE, lamports);
+      const e = ledger.append({ kind: "compute_topup", usd: 0, txSig: r.signature, meta: { amountUsd: usd, from: "SOL", usdcMinOut: r.usdcMinOut } });
+      console.log(`Deposited ~$${usd} of SOL into the compute reserve: ${solscanTx(r.signature)} (ledger #${e.seq})`);
+      return;
+    }
     const sig = await depositUsdc(loadTreasury(), env.USEPOD_DEPOSIT_CODE, usd);
     const e = ledger.append({ kind: "compute_topup", usd: 0, txSig: sig, meta: { amountUsd: usd, from: "USDC" } });
     console.log(`Deposited $${usd} into the compute reserve: ${solscanTx(sig)} (ledger #${e.seq})`);
@@ -97,13 +104,16 @@ const commands: Record<string, () => Promise<void>> = {
     const body = (await res.json()) as any;
     if (res.status !== 200) throw new Error(`${res.status}: ${JSON.stringify(body).slice(0, 400)}`);
     console.log(body?.choices?.[0]?.message?.content);
+    await app.drain();
+    const booked = ledger.head();
     console.log({
       tier: res.headers.get("x-solvent-tier"),
       model: res.headers.get("x-solvent-model"),
-      costUsd: Number(res.headers.get("x-solvent-cost-usd")),
+      costUsd: booked?.kind === "thought" ? -booked.usd : undefined,
+      costSettled: booked?.meta?.costSettled,
       reserveUsd: meter.reserveUsd,
       runwayDays: res.headers.get("x-solvent-runway-days"),
-      ledger: ledger.head()?.seq,
+      ledger: booked?.seq,
     });
   },
 

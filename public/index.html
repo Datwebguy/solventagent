@@ -32,8 +32,8 @@
   .g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  @media (max-width: 900px) { .g4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } .g3 { grid-template-columns: 1fr; } }
-  @media (max-width: 620px) { .g4, .g2 { grid-template-columns: 1fr; } .nav nav { display: none; } }
+  @media (max-width: 900px) { .g4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } .g3 { grid-template-columns: minmax(0, 1fr); } }
+  @media (max-width: 620px) { .g4, .g2 { grid-template-columns: minmax(0, 1fr); } .nav nav { display: none; } }
   section { padding: 22px 0; }
   h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 1.4px; color: var(--muted); margin: 0 0 12px; font-weight: 600; }
   .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; min-width: 0; }
@@ -74,7 +74,9 @@
   .report { white-space: pre-wrap; background: var(--panel-2); border: 1px solid var(--line); border-radius: 9px; padding: 14px; margin-top: 12px; font-size: 14px; }
   .empty { color: var(--muted); padding: 18px; text-align: center; }
   footer { border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; padding: 26px 0 40px; margin-top: 24px; }
-  .steps { counter-reset: s; display: grid; gap: 14px; }
+  .steps { counter-reset: s; display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
+  .step { min-width: 0; }
+  .hero h1, .hero p { overflow-wrap: anywhere; }
   .step h3 { margin: 0 0 6px; font-size: 15px; }
   .step h3::before { counter-increment: s; content: counter(s); display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--panel-2); border: 1px solid var(--line); font-size: 12px; margin-right: 8px; font-family: var(--mono); }
 </style>
@@ -245,7 +247,8 @@ const KIND_LABEL = { income: "income", capital: "deposit", compute_topup: "reser
 function detail(e) {
   const m = e.meta || {};
   switch (e.kind) {
-    case "thought": return `${esc(m.model || "")} ${m.tier ? "· " + esc(m.tier) : ""} ${m.via === "audit_report" ? "· paid audit report" : ""}`;
+    case "thought": if (m.via === "reconciliation") return m.correctsSeq != null ? `cost correction for #${m.correctsSeq} (settled after the answer)` : "unattributed spend found on resync";
+      return `${esc(m.model || "")} ${m.tier ? "· " + esc(m.tier) : ""} ${m.via === "audit_report" ? "· paid audit report" : ""}`;
     case "income": return m.source === "audit_sale" ? `paid audit of ${esc(short(m.auditedWallet))}` : `ClawPump creator fees · ${Number(m.sol || 0).toFixed(4)} SOL`;
     case "compute_topup": return m.amountUsd ? `${small(m.amountUsd)} from ${esc(m.from || "")}` : `external credit ${small(m.reserveCreditUsd)}`;
     case "swap": return `${small(m.amountUsd)} → ${m.to === "9cRCn9rGT8V2imeM2BaKs13yhMEais3ruM3rPvTGpump" ? "$ANSEM reserve" : esc(short(m.to))}`;
@@ -286,7 +289,7 @@ async function loadBooks() {
   $("burn").textContent = `${small(b.burnUsdPerDay)}/day`;
   $("income").textContent = small(b.incomeUsd);
   $("spent").textContent = small(b.spentOnThinkingUsd);
-  $("spentSub").textContent = `${b.thoughts} thoughts${b.thoughts ? ` · avg ${usd(b.spentOnThinkingUsd / b.thoughts, 5)}` : ""}`;
+  $("spentSub").textContent = `${b.thoughts} thought${b.thoughts === 1 ? "" : "s"}${b.thoughts ? ` · avg ${usd(b.spentOnThinkingUsd / b.thoughts, 5)}` : ""}`;
   $("walletUsd").textContent = usd(snap.wallet.usd);
   $("walletSub").innerHTML = `${snap.wallet.sol.toFixed(4)} SOL · ${snap.wallet.usdc.toFixed(2)} USDC · ${snap.wallet.ansem.toFixed(2)} ANSEM<br><a href="https://solscan.io/account/${snap.agent.wallet}" target="_blank" rel="noopener">${short(snap.agent.wallet, 6)}</a>`;
   const tier = snap.tiers.find((t) => t.name === b.tier);

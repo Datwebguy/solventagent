@@ -16,7 +16,7 @@ class MemoryLedger implements LedgerLike {
 }
 
 /** A stand-in for the UsePod gateway: charges 1000 micros per call, can refuse models. */
-function fakeUsePod(opts: { balance: number; noProvider?: string[] }) {
+function fakeUsePod(opts: { balance: number; noProvider?: string[]; lateBy?: number }) {
   const calls: { url: string; headers: Record<string, string>; body: any }[] = [];
   let balance = opts.balance;
   const fetchImpl = (async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -27,28 +27,29 @@ function fakeUsePod(opts: { balance: number; noProvider?: string[] }) {
     if (opts.noProvider?.includes(body.model)) {
       return Response.json({ error: { message: `no healthy provider for model: ${body.model}`, type: "no_provider" } }, { status: 503 });
     }
-    balance -= 1000;
+    if (opts.lateBy) setTimeout(() => (balance -= 1000), opts.lateBy);
+    else balance -= 1000;
     if (body.stream) {
       const sse = `data: {"choices":[{"delta":{"content":"hi"}}]}\n\ndata: {"usage":{"prompt_tokens":5,"completion_tokens":2}}\n\ndata: [DONE]\n\n`;
       return new Response(sse, { headers: { "content-type": "text/event-stream", "x-pod-route": "marketplace" } });
     }
     return Response.json(
       { choices: [{ message: { content: `answer from ${body.model}` } }], usage: { prompt_tokens: 5, completion_tokens: 7 } },
-      { headers: { "x-balance-remaining": String(balance), "x-pod-route": "marketplace", "x-pod-provider-id": "p-1" } },
+      { headers: { ...(opts.lateBy ? {} : { "x-balance-remaining": String(balance) }), "x-pod-route": "marketplace", "x-pod-provider-id": "p-1" } },
     );
   }) as typeof fetch;
   return { fetchImpl, calls, balance: () => balance };
 }
 
-async function setup(balance: number, extra: { noProvider?: string[]; proxyKey?: string; ledger?: MemoryLedger } = {}) {
-  const pod = fakeUsePod({ balance, noProvider: extra.noProvider });
+async function setup(balance: number, extra: { noProvider?: string[]; proxyKey?: string; ledger?: MemoryLedger; settleDelaysMs?: number[]; lateBy?: number } = {}) {
+  const pod = fakeUsePod({ balance, noProvider: extra.noProvider, lateBy: extra.lateBy });
   const ledger = extra.ledger ?? new MemoryLedger();
   const meter = new ReserveMeter(async () => pod.balance());
   await meter.init();
-  const app = createProxy({ apiToken: "tok", ledger, meter, proxyKey: extra.proxyKey, upstream: "https://pod.test", fetchImpl: pod.fetchImpl });
+  const app = createProxy({ apiToken: "tok", ledger, meter, proxyKey: extra.proxyKey, upstream: "https://pod.test", fetchImpl: pod.fetchImpl, settleDelaysMs: extra.settleDelaysMs ?? [0] });
   const post = (path: string, body: unknown, headers: Record<string, string> = {}) =>
     app.request(path, { method: "POST", headers: { "Content-Type": "application/json", ...headers }, body: JSON.stringify(body) });
-  return { app, pod, ledger, meter, post };
+  return { app, pod, ledger, meter, post: async (...a: Parameters<typeof post>) => { const r = await post(...a); await app.drain(); return r; } };
 }
 
 const ask = { model: "auto", messages: [{ role: "user", content: "hi" }] };
@@ -59,7 +60,6 @@ describe("proxy", () => {
     const res = await post("/v1/chat/completions", ask);
     expect(res.status).toBe(200);
     expect(res.headers.get("x-solvent-tier")).toBe("thriving");
-    expect(res.headers.get("x-solvent-cost-usd")).toBe("0.001000");
     const call = pod.calls[0]!;
     expect(call.url).toBe("https://pod.test/proxy/tok/v1/chat/completions");
     expect(call.body.model).toBe("claude-sonnet-4-5");
@@ -116,14 +116,21 @@ describe("proxy", () => {
   });
 
   it("streams through and books the thought once the stream ends", async () => {
-    const { ledger, post } = await setup(10_000_000);
+    const { app, ledger, post } = await setup(10_000_000);
     const res = await post("/v1/chat/completions", { ...ask, stream: true });
     expect(res.headers.get("content-type")).toBe("text/event-stream");
     const text = await res.text();
     expect(text).toContain("[DONE]");
-    await new Promise((r) => setTimeout(r, 0));
+    await app.drain();
     expect(ledger.entries).toHaveLength(1);
     expect(ledger.entries[0]).toMatchObject({ usd: -0.001, meta: { stream: true, usage: { prompt_tokens: 5, completion_tokens: 2 } } });
+  });
+
+  it("waits for UsePod's delayed settlement before booking the cost", async () => {
+    const { ledger, post } = await setup(10_000_000, { lateBy: 30, settleDelaysMs: [0, 20, 40, 80] });
+    const res = await post("/v1/chat/completions", ask);
+    expect(res.status).toBe(200);
+    expect(ledger.entries[0]).toMatchObject({ kind: "thought", usd: -0.001, meta: { costSettled: true } });
   });
 
   it("serves the books publicly", async () => {
