@@ -108,6 +108,38 @@ export async function depositFromToken(
   return { signature, usdcDeposited: Number(quote.otherAmountThreshold) / 1e6 };
 }
 
+/**
+ * Unsigned transaction that lets anyone ("payer") feed an agent's compute reserve with a token
+ * such as $ANSEM: Jupiter swap to USDC, then deposit_usdc of the guaranteed minimum into the
+ * agent's UsePod token. The payer signs it in their own wallet; nothing here holds funds.
+ */
+export async function buildFeedTransaction(
+  payer: PublicKey,
+  depositCode: string,
+  inputMint: string,
+  amountBaseUnits: bigint,
+): Promise<{ transaction: VersionedTransaction; usdcMinOut: number; quoteOut: number }> {
+  const code = codeBytes(depositCode);
+  const readOnlyWallet = { publicKey: payer, signTransaction: async <T>(t: T) => t, signAllTransactions: async <T>(t: T[]) => t };
+  const provider = new anchor.AnchorProvider(connection(), readOnlyWallet as unknown as anchor.Wallet, { commitment: "confirmed" });
+  idlCache ??= (await anchor.Program.fetchIdl(USEPOD_PROGRAM_ID, provider)) ?? undefined;
+  if (!idlCache) throw new Error("UsePod IDL not found on-chain");
+  const program = new anchor.Program(idlCache, provider);
+  const quote = await jupQuote(inputMint, MINTS.USDC, amountBaseUnits, 100);
+  const swap = await jupSwapInstructions(payer, quote);
+  const deposit = await (program.methods as any)
+    .depositUsdc(code, new anchor.BN(quote.otherAmountThreshold))
+    .accounts({ mint: USDC_MINT, depositor: payer })
+    .instruction();
+  const { blockhash } = await connection().getLatestBlockhash("confirmed");
+  const message = new TransactionMessage({ payerKey: payer, recentBlockhash: blockhash, instructions: [...swap.before, deposit, ...swap.after] }).compileToV0Message(swap.alts);
+  return {
+    transaction: new VersionedTransaction(message),
+    usdcMinOut: Number(quote.otherAmountThreshold) / 1e6,
+    quoteOut: Number(quote.outAmount) / 1e6,
+  };
+}
+
 /** Step 2 of x402: sends the quoted amount on-chain to the quote's pay_to address. */
 export async function payX402Rail(payer: Keypair, rail: X402Rail): Promise<string> {
   const payTo = new PublicKey(rail.pay_to);

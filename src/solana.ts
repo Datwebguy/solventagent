@@ -14,15 +14,21 @@ export const MEMO_PROGRAM_ID = new PublicKey("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqX
 let conn: Connection | undefined;
 export const connection = () => (conn ??= new Connection(env.SOLANA_RPC_URL, "confirmed"));
 
-/** Retries RPC reads that hit rate limits (429), backing off 0.5s, 1s, 2s, 4s. */
-export async function withRetry<T>(fn: () => Promise<T>, tries = 5): Promise<T> {
+// Heavy read paths (audits, the index) rotate across free endpoints to spread rate limits.
+const READ_URLS = [env.SOLANA_RPC_URL, "https://api.mainnet-beta.solana.com"];
+const readers = READ_URLS.map((u) => new Connection(u, { commitment: "confirmed", disableRetryOnRateLimit: true }));
+let nextReader = 0;
+export const readConnection = () => readers[nextReader++ % readers.length]!;
+
+/** Retries RPC reads that hit rate limits (429), backing off exponentially up to 10s. */
+export async function withRetry<T>(fn: () => Promise<T>, tries = 8): Promise<T> {
   for (let i = 0; ; i++) {
     try {
       return await fn();
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       if (i >= tries - 1 || !/429|Too many requests/i.test(msg)) throw err;
-      await new Promise((r) => setTimeout(r, 500 * 2 ** i));
+      await new Promise((r) => setTimeout(r, Math.min(10_000, 500 * 2 ** i)));
     }
   }
 }

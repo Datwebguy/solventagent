@@ -89,7 +89,7 @@
       Solvent
     </div>
     <nav>
-      <a href="#books">Books</a><a href="#ledger">Ledger</a><a href="#audit">Audit an agent</a><a href="#build">Build with it</a>
+      <a href="#books">Books</a><a href="#index">Solvency Index</a><a href="#ledger">Ledger</a><a href="#audit">Audit an agent</a><a href="#build">Build with it</a>
     </nav>
   </div>
 </header>
@@ -121,6 +121,20 @@
       <div class="card"><div class="label">Treasury wallet</div><div class="num" id="walletUsd">—</div><div class="sub" id="walletSub"></div></div>
       <div class="card"><div class="label">Model tier right now</div><div class="num" id="tier">—</div><div class="sub" id="tierSub"></div></div>
       <div class="card"><div class="label">Latest on-chain anchor</div><div class="num" id="anchor">—</div><div class="sub" id="anchorSub">ledger fingerprint written to Solana</div></div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <div style="display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; align-items:center">
+        <div style="min-width:0; flex:1 1 320px">
+          <div class="label">Feed Solvent with $ANSEM</div>
+          <div style="font-size:15px; margin-top:4px">Pay for Solvent's thinking with $ANSEM. One transaction swaps it to USDC and deposits it straight into Solvent's compute reserve on UsePod. You sign it in your own wallet.</div>
+          <div class="sub" id="feedQuote"></div>
+        </div>
+        <div class="row" style="flex:0 1 360px">
+          <input type="text" id="feedAmount" value="10" inputmode="decimal" aria-label="ANSEM amount" />
+          <button id="feedBtn">Feed with Phantom</button>
+        </div>
+      </div>
+      <div id="feedOut"></div>
     </div>
   </section>
 
@@ -154,6 +168,21 @@
           <tbody id="ledgerRows"><tr><td colspan="6" class="empty">Loading…</td></tr></tbody>
         </table>
       </div>
+    </div>
+  </section>
+
+
+  <section id="index">
+    <h2>Clawrena Solvency Index</h2>
+    <div class="card">
+      <p class="muted" style="margin-top:0">AnsemHack entries ranked by the creator-fee income their agents actually receive, read from each agent's payout wallet on Solana, and what that income can pay for in thinking. Income is verifiable on-chain; spending is only verifiable for agents that publish Solvent books.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Project</th><th class="r">Income / day</th><th class="r">Last 7 days</th><th class="r">Sonnet-class thoughts / day</th><th>Payout wallet</th><th></th></tr></thead>
+          <tbody id="indexRows"><tr><td colspan="7" class="empty">Loading…</td></tr></tbody>
+        </table>
+      </div>
+      <div class="sub" id="indexMeta"></div>
     </div>
   </section>
 
@@ -389,6 +418,56 @@ $("buyBtn").onclick = async () => {
 };
 $("auditWallet").addEventListener("keydown", (e) => { if (e.key === "Enter") $("auditBtn").click(); });
 
+
+// ---- Clawrena Solvency Index ----
+async function loadIndex() {
+  try {
+    const r = await fetch("/api/solvency-index", { cache: "no-store" });
+    if (!r.ok) throw new Error("not built");
+    const idx = await r.json();
+    const rows = idx.entries.filter((e) => e.audit);
+    $("indexRows").innerHTML = rows.map((e, i) => `<tr>
+      <td class="mono">${i + 1}</td>
+      <td><a href="https://clawpump.tech/tokens/${esc(e.mint)}" target="_blank" rel="noopener">${esc(e.name)}</a> <span class="muted mono">${e.ticker ? "$" + esc(e.ticker) : ""}</span></td>
+      <td class="r mono pos">${usd(e.audit.feeIncome.avgPerDayUsd)}</td>
+      <td class="r mono">${usd(e.audit.feeIncome.last7dUsd)}</td>
+      <td class="r mono">${(e.audit.thoughtsPerDay.thriving || 0).toLocaleString()}</td>
+      <td><a class="mono" href="https://solscan.io/account/${esc(e.payoutWallet)}" target="_blank" rel="noopener">${short(e.payoutWallet)}</a></td>
+      <td><button class="ghost" style="padding:5px 10px; font-size:12px" data-w="${esc(e.payoutWallet)}">Audit</button></td>
+    </tr>`).join("") || `<tr><td colspan="7" class="empty">No payouts found yet.</td></tr>`;
+    $("indexMeta").textContent = `Rebuilt ${new Date(idx.generatedAt).toLocaleString()} from ${idx.source}. Run-rate is measured over each wallet's recent payouts.`;
+    document.querySelectorAll("#indexRows button[data-w]").forEach((b) => (b.onclick = () => { $("auditWallet").value = b.dataset.w; location.hash = "audit"; $("auditBtn").click(); }));
+  } catch {
+    $("indexRows").innerHTML = `<tr><td colspan="7" class="empty">The index is being built.</td></tr>`;
+  }
+}
+
+// ---- Feed Solvent with $ANSEM (the visitor signs; Solvent never holds their funds) ----
+$("feedBtn").onclick = async () => {
+  const provider = window.phantom?.solana || window.solana;
+  const out = (h) => ($("feedOut").innerHTML = h);
+  const amount = Number($("feedAmount").value);
+  if (!(amount > 0)) return out(`<p class="s-bad">Enter an ANSEM amount.</p>`);
+  if (!provider?.isPhantom) return out(`<p class="muted">Install Phantom to feed Solvent from your browser.</p>`);
+  $("feedBtn").disabled = true;
+  try {
+    await provider.connect();
+    out(`<p class="muted">Building your transaction…</p>`);
+    const r = await fetch(`/api/feed?payer=${provider.publicKey.toBase58()}&ansem=${amount}`, { method: "POST" });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || r.status);
+    const tx = solanaWeb3.VersionedTransaction.deserialize(Uint8Array.from(atob(j.transaction), (c) => c.charCodeAt(0)));
+    out(`<p class="muted">Approve in Phantom: ${amount} ANSEM → about $${j.expectedUsdc.toFixed(2)} of Solvent's thinking.</p>`);
+    const { signature } = await provider.signAndSendTransaction(tx);
+    const conn = new solanaWeb3.Connection("https://solana-rpc.publicnode.com", "confirmed");
+    await conn.confirmTransaction(signature, "confirmed");
+    out(`<p class="s-ok">Thank you: Solvent's reserve just grew by at least $${j.usdcToReserve.toFixed(4)}. <a href="${solscanTx(signature)}" target="_blank" rel="noopener">View on Solscan</a>. It shows up in the books within a few minutes.</p>`);
+  } catch (err) {
+    out(`<p class="s-bad">${esc(err.message || err)}</p>`);
+  } finally { $("feedBtn").disabled = false; }
+};
+
+loadIndex();
 loadBooks();
 setInterval(loadBooks, 30_000);
 </script>
