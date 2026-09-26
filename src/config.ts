@@ -21,6 +21,10 @@ const Env = z.object({
   SOLVENT_PROXY_HOST: z.string().default("127.0.0.1"),
   SOLVENT_PROXY_PORT: z.coerce.number().int().positive().default(8787),
   SOLVENT_PROXY_KEY: z.string().min(24).optional(),
+  // Extra wallets whose payments count as income (ClawPump fee payouts are detected automatically).
+  SOLVENT_INCOME_SOURCES: z.string().optional(),
+  // The project's own token; enables the buyback bucket once set.
+  SOLVENT_TOKEN_MINT: z.string().optional(),
 });
 
 export type Env = z.infer<typeof Env>;
@@ -30,4 +34,6 @@ export const env: Env = Env.parse(process.env);
 export const MINTS = {
   USDC: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
   SOL: "So11111111111111111111111111111111111111112",
+  // $ANSEM, "The Black Bull" (CoinGecko: the-black-bull).
+  ANSEM: "9cRCn9rGT8V2imeM2BaKs13yhMEais3ruM3rPvTGpump",
 } as const;

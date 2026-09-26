@@ -1,11 +1,13 @@
-import { appendFileSync } from "node:fs";
+import { appendFileSync, existsSync, writeFileSync } from "node:fs";
 import { books } from "./books.js";
 import { env, MINTS } from "./config.js";
+import { loadPolicy, runCycle } from "./cycle.js";
 import { FileLedger } from "./ledger.js";
 import { ReserveMeter } from "./meter.js";
+import { Policy, policyHash, policyMemo } from "./policy.js";
 import { usdPrice } from "./prices.js";
 import { createProxy } from "./proxy.js";
-import { solscanTx, walletBalances } from "./solana.js";
+import { sendMemo, solscanTx, walletBalances } from "./solana.js";
 import {
   listModels,
   registerToken,
@@ -14,7 +16,7 @@ import {
   x402Quote,
   x402Settle,
 } from "./usepod/client.js";
-import { depositUsdc, payX402Rail } from "./usepod/pay.js";
+import { depositFromToken, depositUsdc, payX402Rail } from "./usepod/pay.js";
 import { loadTreasury } from "./wallet.js";
 
 const [, , cmd, ...args] = process.argv;
@@ -72,7 +74,7 @@ const commands: Record<string, () => Promise<void>> = {
     requireYes("usepod:deposit");
     if (!env.USEPOD_DEPOSIT_CODE) throw new Error("USEPOD_DEPOSIT_CODE is not set");
     const sig = await depositUsdc(loadTreasury(), env.USEPOD_DEPOSIT_CODE, usd);
-    const e = ledger.append({ kind: "compute_topup", usd: -usd, txSig: sig, meta: { venue: "usepod" } });
+    const e = ledger.append({ kind: "compute_topup", usd: 0, txSig: sig, meta: { amountUsd: usd, from: "USDC" } });
     console.log(`Deposited $${usd} into the compute reserve: ${solscanTx(sig)} (ledger #${e.seq})`);
   },
 
@@ -125,6 +127,48 @@ const commands: Record<string, () => Promise<void>> = {
     const e = ledger.append({ kind: "thought", usd: -capUsd, txSig: sig, meta: { rail: "x402", asset, quoteId: q.quote_id, usage: res.usage } });
     console.log(res.body?.choices?.[0]?.message?.content);
     console.log({ paidCapUsd: capUsd, tx: solscanTx(sig), ledger: e.seq });
+  },
+
+  /** Writes solvent.policy.json for this treasury (default split: 50/20/20/10). */
+  async "policy:init"() {
+    if (existsSync("solvent.policy.json")) throw new Error("solvent.policy.json already exists");
+    const policy: Policy = {
+      version: 1,
+      agent: { name: "Solvent", wallet: loadTreasury().publicKey.toBase58() },
+      allocations: { computeReserve: 0.5, ansemReserve: 0.2, operatingCash: 0.2, buyback: 0.1 },
+      computeReserveTargetDays: 14,
+      caps: { maxTxUsd: env.SOLVENT_MAX_TX_USD, maxDayUsd: env.SOLVENT_MAX_DAY_USD },
+    };
+    writeFileSync("solvent.policy.json", JSON.stringify(Policy.parse(policy), null, 2) + "\n");
+    console.log(`Wrote solvent.policy.json (hash ${policyHash(policy)})`);
+  },
+
+  /** Commits the policy hash on-chain so anyone can verify the published rules. */
+  async "policy:commit"() {
+    requireYes("policy:commit");
+    const policy = loadPolicy();
+    const sig = await sendMemo(loadTreasury(), policyMemo(policy));
+    const e = ledger.append({ kind: "policy_commit", usd: 0, txSig: sig, meta: { hash: policyHash(policy) } });
+    console.log(`Policy ${policyHash(policy)} committed: ${solscanTx(sig)} (ledger #${e.seq})`);
+  },
+
+  /** Treasury cycle. Dry run by default; --yes executes. */
+  async cycle() {
+    const r = await runCycle({ execute: flag("yes") });
+    if (!r.executed) console.log("Dry run only. Re-run with --yes to execute.");
+  },
+
+  /** Tops up the compute reserve by selling $ANSEM: npm run cli topup:ansem <ansem> --yes */
+  async "topup:ansem"() {
+    const amount = Number(positional[0]);
+    if (!(amount > 0)) throw new Error("usage: topup:ansem <ANSEM amount> --yes [--record-source]");
+    requireYes("topup:ansem");
+    if (!env.USEPOD_DEPOSIT_CODE) throw new Error("USEPOD_DEPOSIT_CODE is not set");
+    const decimals = 6; // pump.fun tokens use 6 decimals
+    const usd = amount * (await usdPrice(MINTS.ANSEM));
+    const r = await depositFromToken(loadTreasury(), env.USEPOD_DEPOSIT_CODE, MINTS.ANSEM, BigInt(Math.round(amount * 10 ** decimals)), usd, flag("record-source"));
+    const e = ledger.append({ kind: "compute_topup", usd: 0, txSig: r.signature, meta: { amountUsd: usd, from: "ANSEM", ansem: amount, usdcDeposited: r.usdcDeposited } });
+    console.log(`Paid for thinking with ${amount} ANSEM (~$${usd.toFixed(4)}): ${solscanTx(r.signature)} (ledger #${e.seq})`);
   },
 
   /** Books: reserve, burn, runway, status, and ledger integrity. */

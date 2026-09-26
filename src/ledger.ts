@@ -4,17 +4,21 @@ import { env } from "./config.js";
 import { canonicalJson, sha256 } from "./policy.js";
 
 export type EntryKind =
-  | "income" // creator fees or other revenue arriving in the treasury
-  | "compute_topup" // deposit into the UsePod prepaid reserve
-  | "thought" // one paid inference call
-  | "swap"
-  | "buyback"
+  | "income" // creator fees or other revenue (profit and loss +)
+  | "capital" // owner deposits into the treasury (not income)
+  | "compute_topup" // prepaying the UsePod reserve (a transfer, not an expense)
+  | "thought" // one paid inference call (expense)
+  | "swap" // asset conversion, e.g. SOL → $ANSEM reserve
+  | "buyback" // distribution to token holders
   | "policy_commit"
   | "anchor"; // ledger head hash written on-chain
 
 export interface EntryInput {
   kind: EntryKind;
-  /** Signed USD amount from the treasury's point of view: + in, − out. */
+  /**
+   * Profit-and-loss impact in USD: income +, thoughts and buybacks −, transfers and swaps 0.
+   * Transfer sizes go in meta.amountUsd.
+   */
   usd: number;
   txSig?: string;
   meta?: Record<string, unknown>;
