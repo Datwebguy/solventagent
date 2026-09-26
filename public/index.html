@@ -214,10 +214,16 @@
 npm run cli usepod:register     # compute reserve on UsePod
 npm run cli usepod:deposit 2 --yes
 npx tsx src/server.ts</pre></div>
-        <div class="step"><h3>Point any OpenAI or Anthropic client at it</h3>
-          <pre>OPENAI_BASE_URL=http://127.0.0.1:8787/v1      # model: "auto"
-ANTHROPIC_BASE_URL=http://127.0.0.1:8787</pre>
-          <p class="sub">Model "auto" picks the tier your runway can afford. Empty reserve → HTTP 402, the agent sleeps instead of overspending.</p></div>
+        <div class="step"><h3>Point your agent at your local Solvent</h3>
+          <pre># On your machine, after step 1. Your agent pays from your own reserve.
+OPENAI_BASE_URL=http://127.0.0.1:8787/v1
+OPENAI_API_KEY=&lt;your proxy key, or any text&gt;
+
+ANTHROPIC_BASE_URL=http://127.0.0.1:8787
+ANTHROPIC_API_KEY=&lt;your proxy key, or any text&gt;
+
+# Use model "auto": Solvent picks the model your runway can afford.</pre>
+          <p class="sub">Solvent never hosts your proxy: your keys and your reserve stay on your machine. With an empty reserve it answers HTTP 402 and the agent sleeps instead of overspending.</p></div>
       </div>
       <div class="card steps" style="counter-reset: s 2">
         <div class="step"><h3>Give Hermes (claw-agent) its books</h3>
