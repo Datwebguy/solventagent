@@ -26,6 +26,18 @@ const Env = z.object({
   SOLVENT_INCOME_SOURCES: z.string().optional(),
   // The project's own token; enables the buyback bucket once set.
   SOLVENT_TOKEN_MINT: z.string().optional(),
+  // Vercel Blob store used to publish the books for the public dashboard.
+  BLOB_READ_WRITE_TOKEN: z.string().optional(),
+  // Public site settings (web side). The treasury address receives paid-audit payments.
+  SOLVENT_TREASURY_ADDRESS: z.string().optional(),
+  SOLVENT_AUDIT_PRICE_USD: z.coerce.number().positive().default(0.05),
+  // HMAC secret that signs paid-audit quotes so they cannot be forged or altered.
+  SOLVENT_QUOTE_SECRET: z.string().min(32).optional(),
+  // When "1", the hourly treasury cycle executes; otherwise it only plans.
+  SOLVENT_AUTOPILOT: z
+    .string()
+    .optional()
+    .transform((v) => v === "1" || v === "true"),
 });
 
 export type Env = z.infer<typeof Env>;

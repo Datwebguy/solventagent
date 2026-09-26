@@ -1,5 +1,8 @@
 import { appendFileSync, existsSync, writeFileSync } from "node:fs";
+import { auditWallet } from "./audit.js";
 import { books } from "./books.js";
+import { buyReport } from "./buy.js";
+import { ingestInbox, publish } from "./publish.js";
 import { env, MINTS } from "./config.js";
 import { loadPolicy, runCycle } from "./cycle.js";
 import { FileLedger } from "./ledger.js";
@@ -169,6 +172,32 @@ const commands: Record<string, () => Promise<void>> = {
     const r = await depositFromToken(loadTreasury(), env.USEPOD_DEPOSIT_CODE, MINTS.ANSEM, BigInt(Math.round(amount * 10 ** decimals)), usd, flag("record-source"));
     const e = ledger.append({ kind: "compute_topup", usd: 0, txSig: r.signature, meta: { amountUsd: usd, from: "ANSEM", ansem: amount, usdcDeposited: r.usdcDeposited } });
     console.log(`Paid for thinking with ${amount} ANSEM (~$${usd.toFixed(4)}): ${solscanTx(r.signature)} (ledger #${e.seq})`);
+  },
+
+  /** Free on-chain audit of any agent wallet (read-only). */
+  async audit() {
+    const wallet = positional[0];
+    if (!wallet) throw new Error("usage: audit <wallet>");
+    console.log(JSON.stringify(await auditWallet(wallet), null, 2));
+  },
+
+  /** Buys a paid AI solvency report from a Solvent site over x402: audit:buy <wallet> --base <url> --yes */
+  async "audit:buy"() {
+    const wallet = positional[0];
+    const base = args[args.indexOf("--base") + 1];
+    if (!wallet || !args.includes("--base") || !base) throw new Error("usage: audit:buy <wallet> --base <https://site> --yes");
+    requireYes("audit:buy");
+    const { result, paymentTx } = await buyReport(loadTreasury(), base, wallet);
+    console.log(result.report?.markdown);
+    console.log({ paid: solscanTx(paymentTx), model: result.report?.model, reportCostUsd: result.report?.costUsd });
+  },
+
+  /** Publishes the books and ledger to the public dashboard and books any paid-audit sales. */
+  async publish() {
+    const booked = await ingestInbox(ledger);
+    const reserve = env.USEPOD_API_TOKEN ? (await tokenBalanceMicros(env.USEPOD_API_TOKEN)) / 1e6 : 0;
+    const urls = await publish(ledger, reserve);
+    console.log({ bookedSales: booked, ...urls });
   },
 
   /** Books: reserve, burn, runway, status, and ledger integrity. */
