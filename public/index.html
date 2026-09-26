@@ -290,7 +290,7 @@ async function loadBooks() {
   $("runwayBar").style.background = `var(--${cls === "s-ok" ? "ok" : cls === "s-warn" ? "warn" : "bad"})`;
   $("runwaySub").textContent = `goal: always ${target} days paid ahead${b.runwayDays == null ? "" : " · at today's spending"}`;
   $("reserve").textContent = small(b.reserveUsd); $("reserveSub").textContent = "paid ahead, ready to spend";
-  $("burn").textContent = `${small(b.burnUsdPerDay)}/day`;
+  $("burn").textContent = small(b.burnUsdPerDay);
   $("income").textContent = small(b.incomeUsd);
   $("spent").textContent = small(b.spentOnThinkingUsd);
   $("spentSub").textContent = `${b.thoughts} answer${b.thoughts === 1 ? "" : "s"}${b.thoughts ? ` · about ${usd(b.spentOnThinkingUsd / b.thoughts, 4)} each` : ""}`;
