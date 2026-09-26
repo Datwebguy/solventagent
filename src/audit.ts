@@ -51,14 +51,15 @@ export async function auditWallet(address: string, maxTransactions = 150, now = 
   const weekAgo = now / 1000 - 7 * 86_400;
   const last7dSol = payouts.filter((p) => p.blockTime >= weekAgo).reduce((s, p) => s + p.lamports, 0) / 1e9;
   const times = sigs.map((s) => s.blockTime ?? 0).filter(Boolean);
-  const spanDays = times.length > 1 ? Math.max(1, (Math.max(...times) - Math.min(...times)) / 86_400) : 1;
-
+  // Run-rate reflects the last 7 days only, so old income never looks current.
+  const recent = payouts.filter((p) => p.blockTime >= weekAgo);
+  const recentSpanDays = recent.length ? Math.max(1, (now / 1000 - Math.min(...recent.map((p) => p.blockTime))) / 86_400) : 1;
   const [walletSol, usdc, ansem] = await Promise.all([
     solBalance(owner),
     tokenBalance(owner, MINTS.USDC),
     tokenBalance(owner, MINTS.ANSEM),
   ]);
-  const avgPerDayUsd = (sol * solUsd) / spanDays;
+  const avgPerDayUsd = (last7dSol * solUsd) / Math.min(7, recentSpanDays);
 
   return {
     address,
