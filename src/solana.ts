@@ -14,8 +14,8 @@ export const MEMO_PROGRAM_ID = new PublicKey("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqX
 let conn: Connection | undefined;
 export const connection = () => (conn ??= new Connection(env.SOLANA_RPC_URL, "confirmed"));
 
-// Heavy read paths (audits, the index) rotate across free endpoints to spread rate limits.
-const READ_URLS = [env.SOLANA_RPC_URL, "https://api.mainnet-beta.solana.com"];
+// Heavy read paths (audits, the index) can rotate across several endpoints (SOLANA_READ_RPC_URLS).
+const READ_URLS = (env.SOLANA_READ_RPC_URLS ?? env.SOLANA_RPC_URL).split(",").map((u) => u.trim()).filter(Boolean);
 const readers = READ_URLS.map((u) => new Connection(u, { commitment: "confirmed", disableRetryOnRateLimit: true }));
 let nextReader = 0;
 export const readConnection = () => readers[nextReader++ % readers.length]!;

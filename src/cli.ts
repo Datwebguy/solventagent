@@ -4,7 +4,7 @@ import { books } from "./books.js";
 import { buyReport } from "./buy.js";
 import { put } from "@vercel/blob";
 import { ingestInbox, publish } from "./publish.js";
-import { buildSolvencyIndex } from "./solvency-index.js";
+import { buildSolvencyIndex, type SolvencyIndex } from "./solvency-index.js";
 import { env, MINTS } from "./config.js";
 import { loadPolicy, runCycle } from "./cycle.js";
 import { FileLedger } from "./ledger.js";
@@ -212,22 +212,21 @@ const commands: Record<string, () => Promise<void>> = {
     console.log({ bookedSales: booked, ...urls });
   },
 
-  /** Builds the Clawrena Solvency Index from the chain and publishes it: index:build [limit] */
+  /** Builds the Clawrena Solvency Index from the chain, publishing after every project: index:build [limit] */
   async "index:build"() {
-    const index = await buildSolvencyIndex(Number(positional[0] ?? 25), (s) => console.log(s));
-    if (env.SOLVENT_PUBLISH && env.BLOB_READ_WRITE_TOKEN) {
-      const b = await put("solvent/index.json", JSON.stringify(index), {
+    const canPublish = env.SOLVENT_PUBLISH && env.BLOB_READ_WRITE_TOKEN;
+    const save = async (index: SolvencyIndex) => {
+      await put("solvent/index.json", JSON.stringify(index), {
         access: "public",
         allowOverwrite: true,
         addRandomSuffix: false,
-        cacheControlMaxAge: 300,
+        cacheControlMaxAge: 60,
         contentType: "application/json",
         token: env.BLOB_READ_WRITE_TOKEN,
       });
-      console.log(`published ${index.entries.length} entries: ${b.url}`);
-    } else {
-      console.log(JSON.stringify(index, null, 2));
-    }
+    };
+    const index = await buildSolvencyIndex(Number(positional[0] ?? 25), (s) => console.log(s), canPublish ? save : undefined);
+    console.log(canPublish ? `published ${index.entries.length} entries` : JSON.stringify(index, null, 2));
   },
 
   /** Books: reserve, burn, runway, status, and ledger integrity. */

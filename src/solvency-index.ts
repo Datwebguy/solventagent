@@ -39,7 +39,7 @@ export async function fetchLeaderboard(): Promise<Omit<IndexEntry, "payoutWallet
  */
 export async function findPayoutWallet(mint: string): Promise<string | null> {
   const md = await (await fetch(reader(`https://clawpump.tech/tokens/${mint}`), { headers: { "X-Return-Format": "markdown" } })).text();
-  const sigs = [...md.matchAll(/solscan\.io\/tx\/([1-9A-HJ-NP-Za-km-z]{80,90})/g)].map((m) => m[1]!).slice(0, 3);
+  const sigs = [...md.matchAll(/solscan\.io\/tx\/([1-9A-HJ-NP-Za-km-z]{80,90})/g)].map((m) => m[1]!).slice(0, 8);
   for (const sig of sigs) {
     const tx = await withRetry(() => readConnection().getParsedTransaction(sig, { maxSupportedTransactionVersion: 0 }));
     if (!tx) continue;
@@ -56,7 +56,11 @@ export async function findPayoutWallet(mint: string): Promise<string | null> {
 }
 
 /** Builds the index for the top `limit` fee earners. Slow (reads the chain); run it from the runtime, not a web request. */
-export async function buildSolvencyIndex(limit = 25, log: (s: string) => void = () => {}): Promise<SolvencyIndex> {
+export async function buildSolvencyIndex(
+  limit = 25,
+  log: (s: string) => void = () => {},
+  onProgress?: (partial: SolvencyIndex) => Promise<void>,
+): Promise<SolvencyIndex> {
   const board = (await fetchLeaderboard()).filter((r) => r.clawpumpFeesSol > 0).slice(0, limit);
   const entries: IndexEntry[] = [];
   for (const row of board) {
@@ -73,7 +77,12 @@ export async function buildSolvencyIndex(limit = 25, log: (s: string) => void = 
       entries.push({ ...row, payoutWallet: null, audit: null, error: err instanceof Error ? err.message : String(err) });
       log(`#${row.rank} ${row.name}: failed (${err instanceof Error ? err.message : err})`);
     }
+    if (onProgress) await onProgress(snapshot(entries)).catch((e) => log(`progress publish failed: ${e}`));
   }
-  entries.sort((a, b) => (b.audit?.feeIncome.avgPerDayUsd ?? -1) - (a.audit?.feeIncome.avgPerDayUsd ?? -1));
-  return { generatedAt: new Date().toISOString(), source: "clawpump.tech/analytics + Solana mainnet", entries };
+  return snapshot(entries);
+}
+
+function snapshot(entries: IndexEntry[]): SolvencyIndex {
+  const sorted = [...entries].sort((a, b) => (b.audit?.feeIncome.avgPerDayUsd ?? -1) - (a.audit?.feeIncome.avgPerDayUsd ?? -1));
+  return { generatedAt: new Date().toISOString(), source: "clawpump.tech/analytics + Solana mainnet", entries: sorted };
 }

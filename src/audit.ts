@@ -31,9 +31,9 @@ export async function auditWallet(address: string, maxTransactions = 150, now = 
   const owner = new PublicKey(address);
   const sigs = (await withRetry(() => readConnection().getSignaturesForAddress(owner, { limit: maxTransactions }))).filter((s) => !s.err);
   const payouts: { lamports: number; blockTime: number }[] = [];
-  // Free RPCs reject batched getTransaction calls, so fetch individually, 2 at a time across rotating endpoints.
-  for (let i = 0; i < sigs.length; i += 2) {
-    const batch = sigs.slice(i, i + 2);
+  // Free RPCs reject batched getTransaction calls, so fetch individually, 3 at a time.
+  for (let i = 0; i < sigs.length; i += 3) {
+    const batch = sigs.slice(i, i + 3);
     const txs = await Promise.all(
       batch.map((s) => withRetry(() => readConnection().getParsedTransaction(s.signature, { maxSupportedTransactionVersion: 0 }))),
     );
