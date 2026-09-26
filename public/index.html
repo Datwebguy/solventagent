@@ -89,7 +89,7 @@
       Solvent
     </div>
     <nav>
-      <a href="#books">Books</a><a href="#index">Solvency Index</a><a href="#ledger">Ledger</a><a href="#audit">Audit an agent</a><a href="#build">Build with it</a>
+      <a href="#books">Money</a><a href="#policy">Budget rules</a><a href="#ledger">Payments</a><a href="#index">Ranking</a><a href="#audit">Check an agent</a><a href="https://github.com/Datwebguy/solventagent#readme" target="_blank" rel="noopener">For developers</a>
     </nav>
   </div>
 </header>
@@ -97,41 +97,41 @@
 <main class="wrap">
   <div class="hero">
     <h1>An AI agent that pays for its own thinking, with books anyone can check.</h1>
-    <p>Solvent is the CFO for agentic companies. The agent's income (its token's creator fees) funds its own inference on UsePod, under a published budget enforced in code. Every payment has an on-chain receipt, and the ledger is hash-chained and anchored on Solana.</p>
+    <p>Solvent runs an AI agent like a small business. The money its token earns pays for its own thinking, it follows a public budget it cannot break, and every payment is recorded so anyone can check it.</p>
   </div>
 
   <section id="books">
-    <h2>Live books</h2>
+    <h2>Solvent's money, live</h2>
     <div class="card status-card" id="statusCard">
       <div class="badge s-none" id="statusBadge">…</div>
       <div>
-        <div class="label"><span class="pulse s-none" id="pulse"></span><span id="statusLine">Loading the books…</span></div>
+        <div class="label"><span class="pulse s-none" id="pulse"></span><span id="statusLine">Loading…</span></div>
         <div class="runway" id="runway">— <small>days of thinking left</small></div>
-        <div class="bar" title="Runway against the policy's reserve target"><i id="runwayBar" style="width:0%"></i></div>
+        <div class="bar" title="Days left compared with its goal"><i id="runwayBar" style="width:0%"></i></div>
         <div class="sub" id="runwaySub"></div>
       </div>
     </div>
     <div class="grid g4" style="margin-top:14px">
-      <div class="card"><div class="label">Compute reserve (UsePod)</div><div class="num" id="reserve">—</div><div class="sub" id="reserveSub"></div></div>
-      <div class="card"><div class="label">Burn rate</div><div class="num" id="burn">—</div><div class="sub">spent on thinking, last 24h</div></div>
-      <div class="card"><div class="label">Income</div><div class="num pos" id="income">—</div><div class="sub" id="incomeSub">creator fees + paid audits</div></div>
+      <div class="card"><div class="label">Thinking budget</div><div class="num" id="reserve">—</div><div class="sub" id="reserveSub"></div></div>
+      <div class="card"><div class="label">Spending per day</div><div class="num" id="burn">—</div><div class="sub">over the last 24 hours</div></div>
+      <div class="card"><div class="label">Money earned</div><div class="num pos" id="income">—</div><div class="sub" id="incomeSub">from its token and paid reports</div></div>
       <div class="card"><div class="label">Spent on thinking</div><div class="num" id="spent">—</div><div class="sub" id="spentSub"></div></div>
     </div>
     <div class="grid g3" style="margin-top:14px">
-      <div class="card"><div class="label">Treasury wallet</div><div class="num" id="walletUsd">—</div><div class="sub" id="walletSub"></div></div>
-      <div class="card"><div class="label">Model tier right now</div><div class="num" id="tier">—</div><div class="sub" id="tierSub"></div></div>
-      <div class="card"><div class="label">Latest on-chain anchor</div><div class="num" id="anchor">—</div><div class="sub" id="anchorSub">ledger fingerprint written to Solana</div></div>
+      <div class="card"><div class="label">Wallet</div><div class="num" id="walletUsd">—</div><div class="sub" id="walletSub"></div></div>
+      <div class="card"><div class="label">AI it can afford right now</div><div class="num" id="tier">—</div><div class="sub" id="tierSub"></div></div>
+      <div class="card"><div class="label">Last saved to Solana</div><div class="num" id="anchor">—</div><div class="sub" id="anchorSub">a tamper-proof snapshot of its records</div></div>
     </div>
     <div class="card" style="margin-top:14px">
       <div style="display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; align-items:center">
         <div style="min-width:0; flex:1 1 320px">
-          <div class="label">Feed Solvent with $ANSEM</div>
-          <div style="font-size:15px; margin-top:4px">Pay for Solvent's thinking with $ANSEM. One transaction swaps it to USDC and deposits it straight into Solvent's compute reserve on UsePod. You sign it in your own wallet.</div>
+          <div class="label">Buy Solvent some thinking time with $ANSEM</div>
+          <div style="font-size:15px; margin-top:4px">Send $ANSEM from your Phantom wallet. It is converted and added straight to Solvent's thinking budget.</div>
           <div class="sub" id="feedQuote"></div>
         </div>
         <div class="row" style="flex:0 1 360px">
           <input type="text" id="feedAmount" value="10" inputmode="decimal" aria-label="ANSEM amount" />
-          <button id="feedBtn">Feed with Phantom</button>
+          <button id="feedBtn">Send with Phantom</button>
         </div>
       </div>
       <div id="feedOut"></div>
@@ -139,32 +139,31 @@
   </section>
 
   <section id="policy">
-    <h2>Published spending policy</h2>
+    <h2>Budget rules</h2>
     <div class="grid g2">
       <div class="card">
-        <div class="label" style="margin-bottom:12px">How every dollar of income is split</div>
+        <div class="label" style="margin-bottom:12px">Where every dollar it earns goes</div>
         <div class="alloc" id="alloc"><div class="empty">—</div></div>
       </div>
       <div class="card">
-        <div class="label">Rules enforced in code, not in the AI's prompt</div>
+        <div class="label">Rules it cannot break</div>
         <div id="rules" class="sub" style="font-size:13.5px; line-height:1.9; margin-top:8px">—</div>
-        <div class="label" style="margin-top:12px">Policy fingerprint (SHA-256)</div>
-        <div class="hash" id="policyHash">—</div>
+        <div class="hash" id="policyHash" style="display:none"></div>
         <div class="sub" id="policyCommit"></div>
       </div>
     </div>
   </section>
 
   <section id="ledger">
-    <h2>Ledger</h2>
+    <h2>Every payment</h2>
     <div class="card">
       <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:10px">
-        <span class="verify" id="verify">Checking the hash chain in your browser…</span>
-        <a href="/api/ledger" class="sub">download the full ledger ↓</a>
+        <span class="verify" id="verify">Checking the records…</span>
+        <a href="/api/ledger" class="sub">download all records ↓</a>
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>#</th><th>Time (UTC)</th><th>Entry</th><th class="r">P&amp;L (USD)</th><th>Details</th><th>Receipt</th></tr></thead>
+          <thead><tr><th>#</th><th>When (UTC)</th><th>What</th><th class="r">Amount</th><th>Details</th><th>Proof</th></tr></thead>
           <tbody id="ledgerRows"><tr><td colspan="6" class="empty">Loading…</td></tr></tbody>
         </table>
       </div>
@@ -173,12 +172,12 @@
 
 
   <section id="index">
-    <h2>Clawrena Solvency Index</h2>
+    <h2>Clawrena earnings ranking</h2>
     <div class="card">
-      <p class="muted" style="margin-top:0">AnsemHack entries ranked by the creator-fee income their agents actually receive, read from each agent's payout wallet on Solana, and what that income can pay for in thinking. Income is measured at each agent's payout wallet, so a wallet shared by several agents shows their combined income. Income is verifiable on-chain; spending is only verifiable for agents that publish Solvent books.</p>
+      <p class="muted" style="margin-top:0">How much the AnsemHack agents really earn from their tokens, taken from public blockchain records, and how much AI thinking that could pay for. If several agents share one wallet, their earnings are shown together.</p>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>#</th><th>Project</th><th class="r">Income / day</th><th class="r">Last 7 days</th><th class="r">Sonnet-class thoughts / day</th><th>Payout wallet</th><th></th></tr></thead>
+          <thead><tr><th>#</th><th>Project</th><th class="r">Earned per day</th><th class="r">Last 7 days</th><th class="r">AI answers it could pay for daily</th><th>Wallet</th><th></th></tr></thead>
           <tbody id="indexRows"><tr><td colspan="7" class="empty">Loading…</td></tr></tbody>
         </table>
       </div>
@@ -187,61 +186,28 @@
   </section>
 
   <section id="audit">
-    <h2>Audit any agent</h2>
+    <h2>Check any agent</h2>
     <div class="card">
-      <p class="muted" style="margin-top:0">Paste a ClawPump agent's payout wallet. Solvent reads its creator-fee payouts straight from the chain and shows what that income can pay for in thinking. Free.</p>
+      <p class="muted" style="margin-top:0">Paste an agent's wallet address to see what it earns and how much AI thinking that pays for. Free.</p>
       <div class="row">
-        <input type="text" id="auditWallet" placeholder="Solana wallet address" autocomplete="off" spellcheck="false" />
-        <button id="auditBtn">Audit</button>
+        <input type="text" id="auditWallet" placeholder="Wallet address" autocomplete="off" spellcheck="false" />
+        <button id="auditBtn">Check</button>
       </div>
       <div id="auditOut"></div>
       <div id="paidBox" style="display:none; margin-top:14px">
         <div class="row" style="align-items:center">
-          <button class="ghost" id="buyBtn">Get the AI solvency report · $0.05 USDC</button>
-          <span class="sub" id="buyNote">Paid over x402 from your Phantom wallet. Solvent's own reserve pays UsePod to write it.</span>
+          <button class="ghost" id="buyBtn">Get a written report · $0.05</button>
+          <span class="sub" id="buyNote">Pay from your Phantom wallet. Solvent pays for the AI that writes it.</span>
         </div>
         <div id="reportOut"></div>
       </div>
     </div>
   </section>
 
-  <section id="build">
-    <h2>Make your agent pay for its own thinking</h2>
-    <div class="grid g2">
-      <div class="card steps">
-        <div class="step"><h3>Run the Solvent proxy next to your agent</h3>
-          <pre>git clone https://github.com/Datwebguy/solventagent solvent &amp;&amp; cd solvent &amp;&amp; npm install
-npm run cli usepod:register     # compute reserve on UsePod
-npm run cli usepod:deposit 2 --yes
-npx tsx src/server.ts</pre></div>
-        <div class="step"><h3>Point your agent at your local Solvent</h3>
-          <pre># On your machine, after step 1. Your agent pays from your own reserve.
-OPENAI_BASE_URL=http://127.0.0.1:8787/v1
-OPENAI_API_KEY=&lt;your proxy key, or any text&gt;
-
-ANTHROPIC_BASE_URL=http://127.0.0.1:8787
-ANTHROPIC_API_KEY=&lt;your proxy key, or any text&gt;
-
-# Use model "auto": Solvent picks the model your runway can afford.</pre>
-          <p class="sub">Solvent never hosts your proxy: your keys and your reserve stay on your machine. With an empty reserve it answers HTTP 402 and the agent sleeps instead of overspending.</p></div>
-      </div>
-      <div class="card steps" style="counter-reset: s 2">
-        <div class="step"><h3>Give Hermes (claw-agent) its books</h3>
-          <pre># ~/.hermes/config.yaml
-mcp_servers:
-  solvent:
-    command: npx
-    args: ["tsx", "/path/to/solvent/src/mcp.ts"]</pre>
-          <p class="sub">Tools: solvent_books, solvent_ledger, solvent_policy, solvent_plan_cycle, solvent_run_cycle, solvent_pay_with_ansem, solvent_audit_agent.</p></div>
-        <div class="step"><h3>Route creator fees to the treasury</h3>
-          <p class="sub" style="font-size:13.5px">Set your ClawPump agent's payout wallet to the treasury. The hourly cycle detects ClawPump fee payouts, tops up the compute reserve, buys the $ANSEM reserve, runs buybacks, and anchors the ledger.</p></div>
-      </div>
-    </div>
-  </section>
 </main>
 
 <footer>
-  <div class="wrap">Every number here is either on-chain or in a hash-chained ledger whose fingerprints are written to Solana. Prompts are never stored or published. Built for the AnsemHack Clawrena on ClawPump × UsePod.</div>
+  <div class="wrap">Every number here comes from public blockchain records, or from Solvent's own records, which are saved to Solana so they cannot be quietly changed. Solvent never stores what it is asked. Built for AnsemHack Clawrena with ClawPump and UsePod. <a href="https://github.com/Datwebguy/solventagent#readme" target="_blank" rel="noopener">For developers →</a></div>
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.98.4/lib/index.iife.min.js"></script>
@@ -277,19 +243,21 @@ async function verifyChain(entries) {
 }
 
 const STATUS = { SOLVENT: "s-ok", "AT RISK": "s-warn", INSOLVENT: "s-bad" };
-const KIND_LABEL = { income: "income", capital: "deposit", compute_topup: "reserve top-up", thought: "thought", swap: "swap", buyback: "buyback", policy_commit: "policy commit", anchor: "anchor" };
+const KIND_LABEL = { income: "Earned", capital: "Deposit", compute_topup: "Added to budget", thought: "Thinking", swap: "Exchange", buyback: "Buyback", policy_commit: "Rules published", anchor: "Records saved" };
+const TIER_LABEL = { thriving: "Premium", steady: "Standard", frugal: "Budget", dormant: "Paused" };
+const MODEL_LABEL = (m) => ({ "claude-sonnet-4-5": "Claude Sonnet", "claude-sonnet-4-6": "Claude Sonnet", "claude-haiku-4-5": "Claude Haiku", "gpt-5-mini": "GPT mini", "gpt-4o-mini": "GPT mini", "deepseek-v4-1-flash": "DeepSeek", "qwen3-32b": "Qwen" }[m] || m || "");
 
 function detail(e) {
   const m = e.meta || {};
   switch (e.kind) {
-    case "thought": if (m.via === "reconciliation") return m.correctsSeq != null ? `cost correction for #${m.correctsSeq} (settled after the answer)` : "unattributed spend found on resync";
-      return `${esc(m.model || "")} ${m.tier ? "· " + esc(m.tier) : ""} ${m.via === "audit_report" ? "· paid audit report" : ""}`;
-    case "income": return m.source === "audit_sale" ? `paid audit of ${esc(short(m.auditedWallet))}` : `ClawPump creator fees · ${Number(m.sol || 0).toFixed(4)} SOL`;
-    case "compute_topup": return m.amountUsd ? `${small(m.amountUsd)} from ${esc(m.from || "")}` : `external credit ${small(m.reserveCreditUsd)}`;
-    case "swap": return `${small(m.amountUsd)} → ${m.to === "9cRCn9rGT8V2imeM2BaKs13yhMEais3ruM3rPvTGpump" ? "$ANSEM reserve" : esc(short(m.to))}`;
-    case "buyback": return `${small(m.amountUsd)} buyback`;
-    case "anchor": return `ledger #${m.seq} · ${esc(short(m.hash, 6))}`;
-    case "policy_commit": return `policy ${esc(short(m.hash, 6))}`;
+    case "thought": if (m.via === "reconciliation") return m.correctsSeq != null ? `final cost for #${m.correctsSeq}` : "cost update";
+      return m.via === "audit_report" ? `wrote a paid report (${esc(MODEL_LABEL(m.model))})` : `answered with ${esc(MODEL_LABEL(m.model))}`;
+    case "income": return m.source === "audit_sale" ? "sold a written report" : `token earnings · ${Number(m.sol || 0).toFixed(4)} SOL`;
+    case "compute_topup": return m.amountUsd ? `${small(m.amountUsd)}, paid in ${esc(m.from || "")}` : `${small(m.reserveCreditUsd)} added by someone`;
+    case "swap": return m.to === "9cRCn9rGT8V2imeM2BaKs13yhMEais3ruM3rPvTGpump" ? `bought ${small(m.amountUsd)} of $ANSEM` : `exchanged ${small(m.amountUsd)}`;
+    case "buyback": return `bought back ${small(m.amountUsd)} of its token`;
+    case "anchor": return `snapshot of records up to #${m.seq}`;
+    case "policy_commit": return "budget rules published on Solana";
     case "capital": return `${Number(m.sol || 0).toFixed(4)} SOL`;
     default: return "";
   }
@@ -305,9 +273,9 @@ async function loadBooks() {
   } catch {}
   if (!snap) {
     $("statusBadge").textContent = "SOON";
-    $("statusLine").textContent = "Solvent's own books go live when its dedicated treasury wallet is connected.";
+    $("statusLine").textContent = "Solvent's records will appear here soon.";
     $("runway").innerHTML = `— <small>days of thinking left</small>`;
-    $("ledgerRows").innerHTML = `<tr><td colspan="6" class="empty">The ledger appears here once the books are published. Meanwhile, audit any agent below.</td></tr>`;
+    $("ledgerRows").innerHTML = `<tr><td colspan="6" class="empty">Payments will appear here soon. Meanwhile, check any agent below.</td></tr>`;
     $("verify").textContent = "Nothing to verify yet.";
     return;
   }
@@ -320,38 +288,38 @@ async function loadBooks() {
   $("runway").innerHTML = `${b.runwayDays == null ? "∞" : b.runwayDays.toFixed(1)} <small>days of thinking left</small>`;
   $("runwayBar").style.width = `${Math.min(100, ((b.runwayDays ?? target) / target) * 100)}%`;
   $("runwayBar").style.background = `var(--${cls === "s-ok" ? "ok" : cls === "s-warn" ? "warn" : "bad"})`;
-  $("runwaySub").textContent = `target: ${target} days prepaid · ${b.runwayDays == null ? "no spend yet in the last 24h" : "at the current burn rate"}`;
-  $("reserve").textContent = small(b.reserveUsd); $("reserveSub").textContent = "prepaid inference, USDC";
+  $("runwaySub").textContent = `goal: always ${target} days paid ahead${b.runwayDays == null ? "" : " · at today's spending"}`;
+  $("reserve").textContent = small(b.reserveUsd); $("reserveSub").textContent = "paid ahead, ready to spend";
   $("burn").textContent = `${small(b.burnUsdPerDay)}/day`;
   $("income").textContent = small(b.incomeUsd);
   $("spent").textContent = small(b.spentOnThinkingUsd);
-  $("spentSub").textContent = `${b.thoughts} thought${b.thoughts === 1 ? "" : "s"}${b.thoughts ? ` · avg ${usd(b.spentOnThinkingUsd / b.thoughts, 5)}` : ""}`;
+  $("spentSub").textContent = `${b.thoughts} answer${b.thoughts === 1 ? "" : "s"}${b.thoughts ? ` · about ${usd(b.spentOnThinkingUsd / b.thoughts, 4)} each` : ""}`;
   $("walletUsd").textContent = usd(snap.wallet.usd);
-  $("walletSub").innerHTML = `${snap.wallet.sol.toFixed(4)} SOL · ${snap.wallet.usdc.toFixed(2)} USDC · ${snap.wallet.ansem.toFixed(2)} ANSEM<br><a href="https://solscan.io/account/${snap.agent.wallet}" target="_blank" rel="noopener">${short(snap.agent.wallet, 6)}</a>`;
+  $("walletSub").innerHTML = `${snap.wallet.sol.toFixed(4)} SOL · ${snap.wallet.usdc.toFixed(2)} USDC · ${snap.wallet.ansem.toFixed(2)} ANSEM<br><a href="https://solscan.io/account/${snap.agent.wallet}" target="_blank" rel="noopener">view wallet</a>`;
   const tier = snap.tiers.find((t) => t.name === b.tier);
-  $("tier").textContent = b.tier; $("tierSub").textContent = tier && tier.models.length ? tier.models[0] : "not thinking: reserve empty";
-  if (snap.latestAnchor) { $("anchor").innerHTML = `#${snap.latestAnchor.seq}`; $("anchorSub").innerHTML = `<a href="${solscanTx(snap.latestAnchor.tx)}" target="_blank" rel="noopener">view on Solscan</a> · ${short(snap.latestAnchor.hash, 6)}`; }
+  $("tier").textContent = TIER_LABEL[b.tier] || b.tier; $("tierSub").textContent = tier && tier.models.length ? MODEL_LABEL(tier.models[0]) : "paused until its budget is refilled";
+  if (snap.latestAnchor) { $("anchor").innerHTML = `#${snap.latestAnchor.seq}`; $("anchorSub").innerHTML = `<a href="${solscanTx(snap.latestAnchor.tx)}" target="_blank" rel="noopener">view proof</a>`; } else { $("anchor").textContent = "Not yet"; }
 
   const a = snap.policy.allocations;
-  const labels = { computeReserve: "Compute reserve", ansemReserve: "$ANSEM reserve", operatingCash: "Operating cash", buyback: "Token buyback" };
+  const labels = { computeReserve: "Thinking budget", ansemReserve: "$ANSEM savings", operatingCash: "Everyday cash", buyback: "Buying back its token" };
   $("alloc").innerHTML = Object.entries(labels).map(([k, n]) => `<div class="alloc-row"><span>${n}</span><div class="bar"><i style="width:${a[k] * 100}%"></i></div><span class="mono">${Math.round(a[k] * 100)}%</span></div>`).join("");
-  $("rules").innerHTML = `Keep <b>${target} days</b> of thinking prepaid; surplus flows to the other buckets<br>Max <b>${usd(snap.policy.caps.maxTxUsd)}</b> per transaction · <b>${usd(snap.policy.caps.maxDayUsd)}</b> per day<br>Model tier follows runway: ${snap.tiers.filter((t) => t.models.length).map((t) => `${t.name} (${t.minRunwayDays}d+)`).join(" → ")} → dormant`;
+  $("rules").innerHTML = `Always keeps <b>${target} days</b> of thinking paid ahead<br>Never spends more than <b>${usd(snap.policy.caps.maxTxUsd)}</b> at once or <b>${usd(snap.policy.caps.maxDayUsd)}</b> a day<br>Switches to cheaper AI as money runs low, and pauses when it runs out`;
   $("policyHash").textContent = snap.policyHash;
-  $("policyCommit").innerHTML = snap.policyCommitTx ? `committed on-chain: <a href="${solscanTx(snap.policyCommitTx)}" target="_blank" rel="noopener">${short(snap.policyCommitTx, 6)}</a>` : "not yet committed on-chain";
+  $("policyCommit").innerHTML = snap.policyCommitTx ? `These rules are published on Solana: <a href="${solscanTx(snap.policyCommitTx)}" target="_blank" rel="noopener">view proof</a>` : "These rules will be published on Solana soon.";
 
   const broken = await verifyChain(entries);
   const head = entries[entries.length - 1];
-  $("verify").innerHTML = !entries.length ? "No entries yet." : broken === -1
-    ? `<span class="s-ok">✓</span> ${entries.length} entries re-hashed in your browser · chain intact · head ${esc(short(head.hash, 6))}`
-    : `<span class="s-bad">✗</span> chain breaks at entry #${broken}`;
+  $("verify").innerHTML = !entries.length ? "No payments yet." : broken === -1
+    ? `<span class="s-ok">✓</span> Checked in your browser: none of these ${entries.length} records has been changed`
+    : `<span class="s-bad">✗</span> Warning: record #${broken} has been changed`;
   $("ledgerRows").innerHTML = entries.length ? entries.slice(-60).reverse().map((e) => `<tr>
       <td class="mono">${e.seq}</td>
       <td class="mono">${e.ts.slice(0, 19).replace("T", " ")}</td>
       <td><span class="kind">${KIND_LABEL[e.kind] || e.kind}</span></td>
       <td class="r mono ${e.usd > 0 ? "pos" : e.usd < 0 ? "neg" : "muted"}">${e.usd ? usd(e.usd, Math.abs(e.usd) < 1 ? 6 : 2) : "—"}</td>
       <td>${detail(e)}</td>
-      <td>${e.txSig ? `<a href="${solscanTx(e.txSig)}" target="_blank" rel="noopener">${short(e.txSig)}</a>` : `<span class="hash">${short(e.hash, 5)}</span>`}</td>
-    </tr>`).join("") : `<tr><td colspan="6" class="empty">No entries yet.</td></tr>`;
+      <td>${e.txSig ? `<a href="${solscanTx(e.txSig)}" target="_blank" rel="noopener">view</a>` : `<span class="muted">—</span>`}</td>
+    </tr>`).join("") : `<tr><td colspan="6" class="empty">No payments yet.</td></tr>`;
 }
 
 // ---- Audit any agent ----
@@ -359,7 +327,7 @@ let lastAudit = null;
 $("auditBtn").onclick = async () => {
   const w = $("auditWallet").value.trim();
   if (!w) return;
-  $("auditBtn").disabled = true; $("auditOut").innerHTML = `<p class="muted">Reading the chain…</p>`; $("paidBox").style.display = "none"; $("reportOut").innerHTML = "";
+  $("auditBtn").disabled = true; $("auditOut").innerHTML = `<p class="muted">Checking…</p>`; $("paidBox").style.display = "none"; $("reportOut").innerHTML = "";
   try {
     const r = await fetch(`/api/audit?wallet=${encodeURIComponent(w)}`);
     const a = await r.json();
@@ -367,29 +335,29 @@ $("auditBtn").onclick = async () => {
     lastAudit = a;
     const t = a.thoughtsPerDay;
     $("auditOut").innerHTML = `<div class="grid g4" style="margin-top:14px">
-      <div class="card"><div class="label">Fee payouts found</div><div class="num">${a.feeIncome.payouts}</div><div class="sub">${a.feeIncome.sol.toFixed(4)} SOL · ${usd(a.feeIncome.usd)}</div></div>
-      <div class="card"><div class="label">Income run-rate</div><div class="num pos">${usd(a.feeIncome.avgPerDayUsd)}/day</div><div class="sub">last 7d ${usd(a.feeIncome.last7dUsd)}</div></div>
-      <div class="card"><div class="label">Holdings</div><div class="num">${usd(a.balances.usd)}</div><div class="sub">${a.balances.sol.toFixed(3)} SOL · ${a.balances.usdc.toFixed(2)} USDC · ${a.balances.ansem.toFixed(1)} ANSEM</div></div>
-      <div class="card"><div class="label">Thinking it can fund per day</div><div class="num">${(t.thriving || 0).toLocaleString()}</div><div class="sub">Sonnet-class · ${(t.frugal || 0).toLocaleString()} budget-model thoughts</div></div>
-    </div><p class="sub">Scanned ${a.scanned.transactions} recent transactions${a.scanned.from ? ` from ${a.scanned.from.slice(0, 10)} to ${a.scanned.to.slice(0, 10)}` : ""}.</p>`;
+      <div class="card"><div class="label">Payments received</div><div class="num">${a.feeIncome.payouts}</div><div class="sub">${usd(a.feeIncome.usd)} in total</div></div>
+      <div class="card"><div class="label">Earning per day</div><div class="num pos">${usd(a.feeIncome.avgPerDayUsd)}</div><div class="sub">${usd(a.feeIncome.last7dUsd)} in the last 7 days</div></div>
+      <div class="card"><div class="label">What it holds</div><div class="num">${usd(a.balances.usd)}</div><div class="sub">${a.balances.sol.toFixed(3)} SOL · ${a.balances.usdc.toFixed(2)} USDC · ${a.balances.ansem.toFixed(1)} ANSEM</div></div>
+      <div class="card"><div class="label">AI answers it could pay for daily</div><div class="num">${(t.thriving || 0).toLocaleString()}</div><div class="sub">with a top model · ${(t.frugal || 0).toLocaleString()} with a budget one</div></div>
+    </div><p class="sub">Based on its latest activity${a.scanned.from ? ` (${a.scanned.from.slice(0, 10)} to ${a.scanned.to.slice(0, 10)})` : ""}.</p>`;
     $("paidBox").style.display = "block";
   } catch (err) {
-    $("auditOut").innerHTML = `<p class="s-bad">Audit failed: ${esc(err.message)}</p>`;
+    $("auditOut").innerHTML = `<p class="s-bad">Could not check that wallet. Please make sure the address is right and try again.</p>`;
   } finally { $("auditBtn").disabled = false; }
 };
 
 // Pays the x402 quote from Phantom: USDC TransferChecked + the quote's memo, then settles.
 $("buyBtn").onclick = async () => {
   const provider = window.phantom?.solana || window.solana;
-  if (!provider?.isPhantom) { $("reportOut").innerHTML = `<p class="muted">Install Phantom to pay in the browser, or run <span class="mono">npm run cli audit:buy &lt;wallet&gt; --base ${location.origin} --yes</span>.</p>`; return; }
+  if (!provider?.isPhantom) { $("reportOut").innerHTML = `<p class="muted">Install the Phantom wallet to buy a report.</p>`; return; }
   const w = $("auditWallet").value.trim();
   const url = `/api/report?wallet=${encodeURIComponent(w)}`;
   const out = (html) => ($("reportOut").innerHTML = html);
   $("buyBtn").disabled = true;
   try {
-    out(`<p class="muted">Getting a quote…</p>`);
+    out(`<p class="muted">Getting the price…</p>`);
     const q = await fetch(url, { method: "POST" });
-    if (q.status !== 402) throw new Error(`expected a quote, got ${q.status}`);
+    if (q.status !== 402) throw new Error("Reports are not available right now. Please try again later.");
     const quote = JSON.parse(atob(q.headers.get("PAYMENT-REQUIRED")));
     const acc = quote.accepts[0];
     const { PublicKey, Transaction, TransactionInstruction, Connection } = solanaWeb3;
@@ -408,16 +376,16 @@ $("buyBtn").onclick = async () => {
     const memo = new TransactionInstruction({ programId: MEMO, keys: [{ pubkey: payer, isSigner: true, isWritable: false }], data: new TextEncoder().encode(acc.memo) });
     const tx = new Transaction().add(transfer, memo);
     tx.feePayer = payer; tx.recentBlockhash = (await conn.getLatestBlockhash()).blockhash;
-    out(`<p class="muted">Approve $${(acc.amount_microunits / 1e6).toFixed(2)} USDC in Phantom…</p>`);
+    out(`<p class="muted">Approve the $${(acc.amount_microunits / 1e6).toFixed(2)} payment in Phantom…</p>`);
     const { signature } = await provider.signAndSendTransaction(tx);
-    out(`<p class="muted">Paid (<a href="${solscanTx(signature)}" target="_blank" rel="noopener">${short(signature)}</a>). Waiting for confirmation…</p>`);
+    out(`<p class="muted">Payment sent. Waiting for confirmation…</p>`);
     await conn.confirmTransaction(signature, "confirmed");
-    out(`<p class="muted">Confirmed. Solvent is writing the report…</p>`);
+    out(`<p class="muted">Paid. Solvent is writing your report…</p>`);
     const proof = btoa(JSON.stringify({ quote_id: quote.quote_id, signature, payer_wallet: payer.toBase58() }));
     const s = await fetch(url, { method: "POST", headers: { "PAYMENT-SIGNATURE": proof } });
     const res = await s.json();
     if (!s.ok) throw new Error(res.error || s.status);
-    out(`<div class="report">${esc(res.report.markdown)}</div><p class="sub">Written by ${esc(res.report.model)} via UsePod for ${usd(res.report.costUsd, 5)}, paid from Solvent's own reserve · your payment <a href="${solscanTx(signature)}" target="_blank" rel="noopener">${short(signature)}</a></p>`);
+    out(`<div class="report">${esc(res.report.markdown)}</div><p class="sub">Written by ${esc(MODEL_LABEL(res.report.model))}, paid for from Solvent's own budget · <a href="${solscanTx(signature)}" target="_blank" rel="noopener">your payment</a></p>`);
   } catch (err) {
     out(`<p class="s-bad">${esc(err.message || err)}</p>`);
   } finally { $("buyBtn").disabled = false; }
@@ -438,13 +406,13 @@ async function loadIndex() {
       <td class="r mono pos">${usd(e.audit.feeIncome.avgPerDayUsd)}</td>
       <td class="r mono">${usd(e.audit.feeIncome.last7dUsd)}</td>
       <td class="r mono">${(e.audit.thoughtsPerDay.thriving || 0).toLocaleString()}</td>
-      <td><a class="mono" href="https://solscan.io/account/${esc(e.payoutWallet)}" target="_blank" rel="noopener">${short(e.payoutWallet)}</a></td>
-      <td><button class="ghost" style="padding:5px 10px; font-size:12px" data-w="${esc(e.payoutWallet)}">Audit</button></td>
-    </tr>`).join("") || `<tr><td colspan="7" class="empty">No payouts found yet.</td></tr>`;
-    $("indexMeta").textContent = `Rebuilt ${new Date(idx.generatedAt).toLocaleString()} from ${idx.source}. Run-rate is measured over each wallet's recent payouts.`;
+      <td><a href="https://solscan.io/account/${esc(e.payoutWallet)}" target="_blank" rel="noopener">view</a></td>
+      <td><button class="ghost" style="padding:5px 10px; font-size:12px" data-w="${esc(e.payoutWallet)}">Check</button></td>
+    </tr>`).join("") || `<tr><td colspan="7" class="empty">No earnings found yet.</td></tr>`;
+    $("indexMeta").textContent = `Updated ${new Date(idx.generatedAt).toLocaleString()}. Earnings per day are based on the last 7 days.`;
     document.querySelectorAll("#indexRows button[data-w]").forEach((b) => (b.onclick = () => { $("auditWallet").value = b.dataset.w; location.hash = "audit"; $("auditBtn").click(); }));
   } catch {
-    $("indexRows").innerHTML = `<tr><td colspan="7" class="empty">The index is being built.</td></tr>`;
+    $("indexRows").innerHTML = `<tr><td colspan="7" class="empty">The ranking is being updated.</td></tr>`;
   }
 }
 
@@ -453,21 +421,21 @@ $("feedBtn").onclick = async () => {
   const provider = window.phantom?.solana || window.solana;
   const out = (h) => ($("feedOut").innerHTML = h);
   const amount = Number($("feedAmount").value);
-  if (!(amount > 0)) return out(`<p class="s-bad">Enter an ANSEM amount.</p>`);
-  if (!provider?.isPhantom) return out(`<p class="muted">Install Phantom to feed Solvent from your browser.</p>`);
+  if (!(amount > 0)) return out(`<p class="s-bad">Enter how much $ANSEM to send.</p>`);
+  if (!provider?.isPhantom) return out(`<p class="muted">Install the Phantom wallet to send $ANSEM.</p>`);
   $("feedBtn").disabled = true;
   try {
     await provider.connect();
-    out(`<p class="muted">Building your transaction…</p>`);
+    out(`<p class="muted">Preparing…</p>`);
     const r = await fetch(`/api/feed?payer=${provider.publicKey.toBase58()}&ansem=${amount}`, { method: "POST" });
     const j = await r.json();
     if (!r.ok) throw new Error(j.error || r.status);
     const tx = solanaWeb3.VersionedTransaction.deserialize(Uint8Array.from(atob(j.transaction), (c) => c.charCodeAt(0)));
-    out(`<p class="muted">Approve in Phantom: ${amount} ANSEM → about $${j.expectedUsdc.toFixed(2)} of Solvent's thinking.</p>`);
+    out(`<p class="muted">Approve in Phantom: ${amount} $ANSEM becomes about $${j.expectedUsdc.toFixed(2)} of thinking for Solvent.</p>`);
     const { signature } = await provider.signAndSendTransaction(tx);
     const conn = new solanaWeb3.Connection("https://solana-rpc.publicnode.com", "confirmed");
     await conn.confirmTransaction(signature, "confirmed");
-    out(`<p class="s-ok">Thank you: Solvent's reserve just grew by at least $${j.usdcToReserve.toFixed(4)}. <a href="${solscanTx(signature)}" target="_blank" rel="noopener">View on Solscan</a>. It shows up in the books within a few minutes.</p>`);
+    out(`<p class="s-ok">Thank you! Solvent's thinking budget grew by about $${j.usdcToReserve.toFixed(2)}. <a href="${solscanTx(signature)}" target="_blank" rel="noopener">View proof</a>. It will show up here within a few minutes.</p>`);
   } catch (err) {
     out(`<p class="s-bad">${esc(err.message || err)}</p>`);
   } finally { $("feedBtn").disabled = false; }
