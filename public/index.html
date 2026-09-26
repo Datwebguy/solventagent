@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Solvent — the CFO for agentic companies</title>
+<meta name="description" content="Agents that pay for their own inference from their own income, with public books anyone can verify." />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%230c0f0e'/><path d='M8 18l5 5 11-13' stroke='%233ddc97' stroke-width='3.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0b0d0c; --panel: #121614; --panel-2: #171c19; --line: #232a26; --text: #e8efe9; --muted: #8a978f;
+    --ok: #3ddc97; --warn: #f5b83d; --bad: #ff5c5c; --accent: #3ddc97; --link: #7fd6ff;
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; --sans: Inter, system-ui, -apple-system, Segoe UI, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 15px; line-height: 1.5; }
+  a { color: var(--link); text-decoration: none; } a:hover { text-decoration: underline; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 16px; }
+  header { border-bottom: 1px solid var(--line); }
+  .nav { display: flex; align-items: center; justify-content: space-between; height: 60px; gap: 12px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: .2px; }
+  .brand svg { flex: none; }
+  .nav nav { display: flex; gap: 18px; font-size: 14px; flex-wrap: wrap; }
+  .nav nav a { color: var(--muted); } .nav nav a:hover { color: var(--text); text-decoration: none; }
+  .hero { padding: 40px 0 8px; }
+  .hero h1 { font-size: clamp(26px, 4vw, 40px); line-height: 1.15; margin: 0 0 10px; letter-spacing: -.5px; }
+  .hero p { color: var(--muted); max-width: 720px; margin: 0; font-size: 16px; }
+  .grid { display: grid; gap: 14px; }
+  .g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (max-width: 900px) { .g4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } .g3 { grid-template-columns: 1fr; } }
+  @media (max-width: 620px) { .g4, .g2 { grid-template-columns: 1fr; } .nav nav { display: none; } }
+  section { padding: 22px 0; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 1.4px; color: var(--muted); margin: 0 0 12px; font-weight: 600; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; min-width: 0; }
+  .label { color: var(--muted); font-size: 12.5px; }
+  .num { font-family: var(--mono); font-size: 24px; font-weight: 500; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sub { color: var(--muted); font-size: 12.5px; font-family: var(--mono); margin-top: 2px; overflow-wrap: anywhere; }
+  .status-card { display: grid; grid-template-columns: auto 1fr; gap: 22px; align-items: center; background: linear-gradient(180deg, var(--panel-2), var(--panel)); }
+  @media (max-width: 620px) { .status-card { grid-template-columns: 1fr; } }
+  .badge { font-family: var(--mono); font-weight: 700; font-size: 26px; padding: 14px 20px; border-radius: 10px; border: 2px solid currentColor; letter-spacing: 1px; text-align: center; }
+  .s-ok { color: var(--ok); } .s-warn { color: var(--warn); } .s-bad { color: var(--bad); } .s-none { color: var(--muted); }
+  .runway { font-size: clamp(30px, 5vw, 46px); font-family: var(--mono); font-weight: 700; line-height: 1.1; }
+  .runway small { font-size: 15px; font-weight: 400; color: var(--muted); font-family: var(--sans); }
+  .bar { height: 8px; background: var(--line); border-radius: 99px; overflow: hidden; margin-top: 12px; }
+  .bar > i { display: block; height: 100%; background: var(--accent); border-radius: 99px; transition: width .6s ease; }
+  .pulse { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: currentColor; margin-right: 8px; animation: beat 1.6s infinite; vertical-align: middle; }
+  @keyframes beat { 0%,100% { opacity: 1 } 50% { opacity: .25 } }
+  .alloc { display: grid; gap: 10px; }
+  .alloc-row { display: grid; grid-template-columns: 140px 1fr 48px; gap: 10px; align-items: center; font-size: 13.5px; }
+  .alloc-row .bar { margin: 0; }
+  .mono { font-family: var(--mono); }
+  .hash { font-family: var(--mono); font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
+  .verify { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel-2); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 500; font-size: 12px; }
+  td.r, th.r { text-align: right; }
+  .table-wrap { overflow-x: auto; }
+  .kind { font-family: var(--mono); font-size: 12px; padding: 2px 7px; border-radius: 6px; background: var(--panel-2); border: 1px solid var(--line); white-space: nowrap; }
+  .pos { color: var(--ok); } .neg { color: var(--bad); }
+  input[type=text] { width: 100%; background: var(--bg); border: 1px solid var(--line); color: var(--text); padding: 11px 12px; border-radius: 9px; font-family: var(--mono); font-size: 14px; }
+  button { background: var(--accent); color: #06130d; border: 0; padding: 11px 16px; border-radius: 9px; font-weight: 600; cursor: pointer; font-size: 14px; white-space: nowrap; }
+  button.ghost { background: transparent; color: var(--text); border: 1px solid var(--line); }
+  button:disabled { opacity: .5; cursor: default; }
+  .row { display: flex; gap: 10px; }
+  @media (max-width: 620px) { .row { flex-direction: column; } }
+  pre { background: var(--bg); border: 1px solid var(--line); border-radius: 9px; padding: 12px; overflow-x: auto; font-family: var(--mono); font-size: 12.5px; margin: 8px 0 0; }
+  .muted { color: var(--muted); }
+  .report { white-space: pre-wrap; background: var(--panel-2); border: 1px solid var(--line); border-radius: 9px; padding: 14px; margin-top: 12px; font-size: 14px; }
+  .empty { color: var(--muted); padding: 18px; text-align: center; }
+  footer { border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; padding: 26px 0 40px; margin-top: 24px; }
+  .steps { counter-reset: s; display: grid; gap: 14px; }
+  .step h3 { margin: 0 0 6px; font-size: 15px; }
+  .step h3::before { counter-increment: s; content: counter(s); display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--panel-2); border: 1px solid var(--line); font-size: 12px; margin-right: 8px; font-family: var(--mono); }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap nav">
+    <div class="brand">
+      <svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#171c19" stroke="#232a26"/><path d="M8 18l5 5 11-13" stroke="#3ddc97" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Solvent
+    </div>
+    <nav>
+      <a href="#books">Books</a><a href="#ledger">Ledger</a><a href="#audit">Audit an agent</a><a href="#build">Build with it</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="hero">
+    <h1>An AI agent that pays for its own thinking, with books anyone can check.</h1>
+    <p>Solvent is the CFO for agentic companies. The agent's income (its token's creator fees) funds its own inference on UsePod, under a published budget enforced in code. Every payment has an on-chain receipt, and the ledger is hash-chained and anchored on Solana.</p>
+  </div>
+
+  <section id="books">
+    <h2>Live books</h2>
+    <div class="card status-card" id="statusCard">
+      <div class="badge s-none" id="statusBadge">…</div>
+      <div>
+        <div class="label"><span class="pulse s-none" id="pulse"></span><span id="statusLine">Loading the books…</span></div>
+        <div class="runway" id="runway">— <small>days of thinking left</small></div>
+        <div class="bar" title="Runway against the policy's reserve target"><i id="runwayBar" style="width:0%"></i></div>
+        <div class="sub" id="runwaySub"></div>
+      </div>
+    </div>
+    <div class="grid g4" style="margin-top:14px">
+      <div class="card"><div class="label">Compute reserve (UsePod)</div><div class="num" id="reserve">—</div><div class="sub" id="reserveSub"></div></div>
+      <div class="card"><div class="label">Burn rate</div><div class="num" id="burn">—</div><div class="sub">spent on thinking, last 24h</div></div>
+      <div class="card"><div class="label">Income</div><div class="num pos" id="income">—</div><div class="sub" id="incomeSub">creator fees + paid audits</div></div>
+      <div class="card"><div class="label">Spent on thinking</div><div class="num" id="spent">—</div><div class="sub" id="spentSub"></div></div>
+    </div>
+    <div class="grid g3" style="margin-top:14px">
+      <div class="card"><div class="label">Treasury wallet</div><div class="num" id="walletUsd">—</div><div class="sub" id="walletSub"></div></div>
+      <div class="card"><div class="label">Model tier right now</div><div class="num" id="tier">—</div><div class="sub" id="tierSub"></div></div>
+      <div class="card"><div class="label">Latest on-chain anchor</div><div class="num" id="anchor">—</div><div class="sub" id="anchorSub">ledger fingerprint written to Solana</div></div>
+    </div>
+  </section>
+
+  <section id="policy">
+    <h2>Published spending policy</h2>
+    <div class="grid g2">
+      <div class="card">
+        <div class="label" style="margin-bottom:12px">How every dollar of income is split</div>
+        <div class="alloc" id="alloc"><div class="empty">—</div></div>
+      </div>
+      <div class="card">
+        <div class="label">Rules enforced in code, not in the AI's prompt</div>
+        <div id="rules" class="sub" style="font-size:13.5px; line-height:1.9; margin-top:8px">—</div>
+        <div class="label" style="margin-top:12px">Policy fingerprint (SHA-256)</div>
+        <div class="hash" id="policyHash">—</div>
+        <div class="sub" id="policyCommit"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="ledger">
+    <h2>Ledger</h2>
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:10px">
+        <span class="verify" id="verify">Checking the hash chain in your browser…</span>
+        <a href="/api/ledger" class="sub">download the full ledger ↓</a>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Time (UTC)</th><th>Entry</th><th class="r">P&amp;L (USD)</th><th>Details</th><th>Receipt</th></tr></thead>
+          <tbody id="ledgerRows"><tr><td colspan="6" class="empty">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="audit">
+    <h2>Audit any agent</h2>
+    <div class="card">
+      <p class="muted" style="margin-top:0">Paste a ClawPump agent's payout wallet. Solvent reads its creator-fee payouts straight from the chain and shows what that income can pay for in thinking. Free.</p>
+      <div class="row">
+        <input type="text" id="auditWallet" placeholder="Solana wallet address" autocomplete="off" spellcheck="false" />
+        <button id="auditBtn">Audit</button>
+      </div>
+      <div id="auditOut"></div>
+      <div id="paidBox" style="display:none; margin-top:14px">
+        <div class="row" style="align-items:center">
+          <button class="ghost" id="buyBtn">Get the AI solvency report · $0.05 USDC</button>
+          <span class="sub" id="buyNote">Paid over x402 from your Phantom wallet. Solvent's own reserve pays UsePod to write it.</span>
+        </div>
+        <div id="reportOut"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="build">
+    <h2>Make your agent pay for its own thinking</h2>
+    <div class="grid g2">
+      <div class="card steps">
+        <div class="step"><h3>Run the Solvent proxy next to your agent</h3>
+          <pre>git clone &lt;repo&gt; solvent &amp;&amp; cd solvent &amp;&amp; npm install
+npm run cli usepod:register     # compute reserve on UsePod
+npm run cli usepod:deposit 2 --yes
+npx tsx src/server.ts</pre></div>
+        <div class="step"><h3>Point any OpenAI or Anthropic client at it</h3>
+          <pre>OPENAI_BASE_URL=http://127.0.0.1:8787/v1      # model: "auto"
+ANTHROPIC_BASE_URL=http://127.0.0.1:8787</pre>
+          <p class="sub">Model "auto" picks the tier your runway can afford. Empty reserve → HTTP 402, the agent sleeps instead of overspending.</p></div>
+      </div>
+      <div class="card steps" style="counter-reset: s 2">
+        <div class="step"><h3>Give Hermes (claw-agent) its books</h3>
+          <pre># ~/.hermes/config.yaml
+mcp_servers:
+  solvent:
+    command: npx
+    args: ["tsx", "/path/to/solvent/src/mcp.ts"]</pre>
+          <p class="sub">Tools: solvent_books, solvent_ledger, solvent_policy, solvent_plan_cycle, solvent_run_cycle, solvent_pay_with_ansem, solvent_audit_agent.</p></div>
+        <div class="step"><h3>Route creator fees to the treasury</h3>
+          <p class="sub" style="font-size:13.5px">Set your ClawPump agent's payout wallet to the treasury. The hourly cycle detects ClawPump fee payouts, tops up the compute reserve, buys the $ANSEM reserve, runs buybacks, and anchors the ledger.</p></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">Every number here is either on-chain or in a hash-chained ledger whose fingerprints are written to Solana. Prompts are never stored or published. Built for the AnsemHack Clawrena on ClawPump × UsePod.</div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.98.4/lib/index.iife.min.js"></script>
+<script>
+const $ = (id) => document.getElementById(id);
+const usd = (v, d = 2) => (v == null || !isFinite(v) ? "—" : (v < 0 ? "-$" : "$") + Math.abs(v).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d }));
+const small = (v) => usd(v, v != null && Math.abs(v) < 1 ? 4 : 2);
+const short = (s, n = 4) => (s ? `${s.slice(0, n)}…${s.slice(-n)}` : "");
+const solscanTx = (sig) => `https://solscan.io/tx/${sig}`;
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+// Same canonical JSON + SHA-256 as the runtime (src/policy.ts, src/ledger.ts).
+function canonicalJson(v) {
+  if (Array.isArray(v)) return `[${v.map(canonicalJson).join(",")}]`;
+  if (v && typeof v === "object") {
+    const e = Object.entries(v).filter(([, x]) => x !== undefined).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+    return `{${e.map(([k, x]) => `${JSON.stringify(k)}:${canonicalJson(x)}`).join(",")}}`;
+  }
+  return JSON.stringify(v);
+}
+async function sha256(s) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+async function verifyChain(entries) {
+  let prev = "0".repeat(64);
+  for (const [i, e] of entries.entries()) {
+    const { hash, ...rest } = e;
+    if (e.prevHash !== prev || e.seq !== i || (await sha256(canonicalJson(rest))) !== hash) return i;
+    prev = hash;
+  }
+  return -1;
+}
+
+const STATUS = { SOLVENT: "s-ok", "AT RISK": "s-warn", INSOLVENT: "s-bad" };
+const KIND_LABEL = { income: "income", capital: "deposit", compute_topup: "reserve top-up", thought: "thought", swap: "swap", buyback: "buyback", policy_commit: "policy commit", anchor: "anchor" };
+
+function detail(e) {
+  const m = e.meta || {};
+  switch (e.kind) {
+    case "thought": return `${esc(m.model || "")} ${m.tier ? "· " + esc(m.tier) : ""} ${m.via === "audit_report" ? "· paid audit report" : ""}`;
+    case "income": return m.source === "audit_sale" ? `paid audit of ${esc(short(m.auditedWallet))}` : `ClawPump creator fees · ${Number(m.sol || 0).toFixed(4)} SOL`;
+    case "compute_topup": return m.amountUsd ? `${small(m.amountUsd)} from ${esc(m.from || "")}` : `external credit ${small(m.reserveCreditUsd)}`;
+    case "swap": return `${small(m.amountUsd)} → ${m.to === "9cRCn9rGT8V2imeM2BaKs13yhMEais3ruM3rPvTGpump" ? "$ANSEM reserve" : esc(short(m.to))}`;
+    case "buyback": return `${small(m.amountUsd)} buyback`;
+    case "anchor": return `ledger #${m.seq} · ${esc(short(m.hash, 6))}`;
+    case "policy_commit": return `policy ${esc(short(m.hash, 6))}`;
+    case "capital": return `${Number(m.sol || 0).toFixed(4)} SOL`;
+    default: return "";
+  }
+}
+
+async function loadBooks() {
+  let snap = null, entries = [];
+  try {
+    const r = await fetch("/api/books", { cache: "no-store" });
+    if (r.ok) snap = await r.json();
+    const l = await fetch("/api/ledger", { cache: "no-store" });
+    if (l.ok) entries = (await l.text()).split("\n").filter(Boolean).map((x) => JSON.parse(x));
+  } catch {}
+  if (!snap) {
+    $("statusBadge").textContent = "OFFLINE";
+    $("statusLine").textContent = "The agent has not published its books yet.";
+    $("ledgerRows").innerHTML = `<tr><td colspan="6" class="empty">No entries yet.</td></tr>`;
+    $("verify").textContent = "No ledger to verify yet.";
+    return;
+  }
+  const b = snap.books;
+  const cls = STATUS[b.status] || "s-none";
+  $("statusBadge").className = `badge ${cls}`; $("statusBadge").textContent = b.status;
+  $("pulse").className = `pulse ${cls}`;
+  $("statusLine").textContent = `${snap.agent.name} · updated ${new Date(snap.generatedAt).toLocaleString()}`;
+  const target = snap.policy.computeReserveTargetDays;
+  $("runway").innerHTML = `${b.runwayDays == null ? "∞" : b.runwayDays.toFixed(1)} <small>days of thinking left</small>`;
+  $("runwayBar").style.width = `${Math.min(100, ((b.runwayDays ?? target) / target) * 100)}%`;
+  $("runwayBar").style.background = `var(--${cls === "s-ok" ? "ok" : cls === "s-warn" ? "warn" : "bad"})`;
+  $("runwaySub").textContent = `target: ${target} days prepaid · ${b.runwayDays == null ? "no spend yet in the last 24h" : "at the current burn rate"}`;
+  $("reserve").textContent = small(b.reserveUsd); $("reserveSub").textContent = "prepaid inference, USDC";
+  $("burn").textContent = `${small(b.burnUsdPerDay)}/day`;
+  $("income").textContent = small(b.incomeUsd);
+  $("spent").textContent = small(b.spentOnThinkingUsd);
+  $("spentSub").textContent = `${b.thoughts} thoughts${b.thoughts ? ` · avg ${usd(b.spentOnThinkingUsd / b.thoughts, 5)}` : ""}`;
+  $("walletUsd").textContent = usd(snap.wallet.usd);
+  $("walletSub").innerHTML = `${snap.wallet.sol.toFixed(4)} SOL · ${snap.wallet.usdc.toFixed(2)} USDC · ${snap.wallet.ansem.toFixed(2)} ANSEM<br><a href="https://solscan.io/account/${snap.agent.wallet}" target="_blank" rel="noopener">${short(snap.agent.wallet, 6)}</a>`;
+  const tier = snap.tiers.find((t) => t.name === b.tier);
+  $("tier").textContent = b.tier; $("tierSub").textContent = tier && tier.models.length ? tier.models[0] : "not thinking: reserve empty";
+  if (snap.latestAnchor) { $("anchor").innerHTML = `#${snap.latestAnchor.seq}`; $("anchorSub").innerHTML = `<a href="${solscanTx(snap.latestAnchor.tx)}" target="_blank" rel="noopener">view on Solscan</a> · ${short(snap.latestAnchor.hash, 6)}`; }
+
+  const a = snap.policy.allocations;
+  const labels = { computeReserve: "Compute reserve", ansemReserve: "$ANSEM reserve", operatingCash: "Operating cash", buyback: "Token buyback" };
+  $("alloc").innerHTML = Object.entries(labels).map(([k, n]) => `<div class="alloc-row"><span>${n}</span><div class="bar"><i style="width:${a[k] * 100}%"></i></div><span class="mono">${Math.round(a[k] * 100)}%</span></div>`).join("");
+  $("rules").innerHTML = `Keep <b>${target} days</b> of thinking prepaid; surplus flows to the other buckets<br>Max <b>${usd(snap.policy.caps.maxTxUsd)}</b> per transaction · <b>${usd(snap.policy.caps.maxDayUsd)}</b> per day<br>Model tier follows runway: ${snap.tiers.filter((t) => t.models.length).map((t) => `${t.name} (${t.minRunwayDays}d+)`).join(" → ")} → dormant`;
+  $("policyHash").textContent = snap.policyHash;
+  $("policyCommit").innerHTML = snap.policyCommitTx ? `committed on-chain: <a href="${solscanTx(snap.policyCommitTx)}" target="_blank" rel="noopener">${short(snap.policyCommitTx, 6)}</a>` : "not yet committed on-chain";
+
+  const broken = await verifyChain(entries);
+  const head = entries[entries.length - 1];
+  $("verify").innerHTML = !entries.length ? "No entries yet." : broken === -1
+    ? `<span class="s-ok">✓</span> ${entries.length} entries re-hashed in your browser · chain intact · head ${esc(short(head.hash, 6))}`
+    : `<span class="s-bad">✗</span> chain breaks at entry #${broken}`;
+  $("ledgerRows").innerHTML = entries.length ? entries.slice(-60).reverse().map((e) => `<tr>
+      <td class="mono">${e.seq}</td>
+      <td class="mono">${e.ts.slice(0, 19).replace("T", " ")}</td>
+      <td><span class="kind">${KIND_LABEL[e.kind] || e.kind}</span></td>
+      <td class="r mono ${e.usd > 0 ? "pos" : e.usd < 0 ? "neg" : "muted"}">${e.usd ? usd(e.usd, Math.abs(e.usd) < 1 ? 6 : 2) : "—"}</td>
+      <td>${detail(e)}</td>
+      <td>${e.txSig ? `<a href="${solscanTx(e.txSig)}" target="_blank" rel="noopener">${short(e.txSig)}</a>` : `<span class="hash">${short(e.hash, 5)}</span>`}</td>
+    </tr>`).join("") : `<tr><td colspan="6" class="empty">No entries yet.</td></tr>`;
+}
+
+// ---- Audit any agent ----
+let lastAudit = null;
+$("auditBtn").onclick = async () => {
+  const w = $("auditWallet").value.trim();
+  if (!w) return;
+  $("auditBtn").disabled = true; $("auditOut").innerHTML = `<p class="muted">Reading the chain…</p>`; $("paidBox").style.display = "none"; $("reportOut").innerHTML = "";
+  try {
+    const r = await fetch(`/api/audit?wallet=${encodeURIComponent(w)}`);
+    const a = await r.json();
+    if (!r.ok) throw new Error(a.error || r.status);
+    lastAudit = a;
+    const t = a.thoughtsPerDay;
+    $("auditOut").innerHTML = `<div class="grid g4" style="margin-top:14px">
+      <div class="card"><div class="label">Fee payouts found</div><div class="num">${a.feeIncome.payouts}</div><div class="sub">${a.feeIncome.sol.toFixed(4)} SOL · ${usd(a.feeIncome.usd)}</div></div>
+      <div class="card"><div class="label">Income run-rate</div><div class="num pos">${usd(a.feeIncome.avgPerDayUsd)}/day</div><div class="sub">last 7d ${usd(a.feeIncome.last7dUsd)}</div></div>
+      <div class="card"><div class="label">Holdings</div><div class="num">${usd(a.balances.usd)}</div><div class="sub">${a.balances.sol.toFixed(3)} SOL · ${a.balances.usdc.toFixed(2)} USDC · ${a.balances.ansem.toFixed(1)} ANSEM</div></div>
+      <div class="card"><div class="label">Thinking it can fund per day</div><div class="num">${(t.thriving || 0).toLocaleString()}</div><div class="sub">Sonnet-class · ${(t.frugal || 0).toLocaleString()} budget-model thoughts</div></div>
+    </div><p class="sub">Scanned ${a.scanned.transactions} recent transactions${a.scanned.from ? ` from ${a.scanned.from.slice(0, 10)} to ${a.scanned.to.slice(0, 10)}` : ""}.</p>`;
+    $("paidBox").style.display = "block";
+  } catch (err) {
+    $("auditOut").innerHTML = `<p class="s-bad">Audit failed: ${esc(err.message)}</p>`;
+  } finally { $("auditBtn").disabled = false; }
+};
+
+// Pays the x402 quote from Phantom: USDC TransferChecked + the quote's memo, then settles.
+$("buyBtn").onclick = async () => {
+  const provider = window.phantom?.solana || window.solana;
+  if (!provider?.isPhantom) { $("reportOut").innerHTML = `<p class="muted">Install Phantom to pay in the browser, or run <span class="mono">npm run cli audit:buy &lt;wallet&gt; --base ${location.origin} --yes</span>.</p>`; return; }
+  const w = $("auditWallet").value.trim();
+  const url = `/api/report?wallet=${encodeURIComponent(w)}`;
+  const out = (html) => ($("reportOut").innerHTML = html);
+  $("buyBtn").disabled = true;
+  try {
+    out(`<p class="muted">Getting a quote…</p>`);
+    const q = await fetch(url, { method: "POST" });
+    if (q.status !== 402) throw new Error(`expected a quote, got ${q.status}`);
+    const quote = JSON.parse(atob(q.headers.get("PAYMENT-REQUIRED")));
+    const acc = quote.accepts[0];
+    const { PublicKey, Transaction, TransactionInstruction, Connection } = solanaWeb3;
+    await provider.connect();
+    const payer = provider.publicKey;
+    const conn = new Connection("https://solana-rpc.publicnode.com", "confirmed");
+    const TOKEN = new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
+    const ATA = new PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL");
+    const MEMO = new PublicKey("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr");
+    const mint = new PublicKey(acc.mint);
+    const ata = (owner) => PublicKey.findProgramAddressSync([owner.toBuffer(), TOKEN.toBuffer(), mint.toBuffer()], ATA)[0];
+    const data = new Uint8Array(10); data[0] = 12; new DataView(data.buffer).setBigUint64(1, BigInt(acc.amount_microunits), true); data[9] = 6;
+    const transfer = new TransactionInstruction({ programId: TOKEN, keys: [
+      { pubkey: ata(payer), isSigner: false, isWritable: true }, { pubkey: mint, isSigner: false, isWritable: false },
+      { pubkey: ata(new PublicKey(acc.pay_to)), isSigner: false, isWritable: true }, { pubkey: payer, isSigner: true, isWritable: false } ], data });
+    const memo = new TransactionInstruction({ programId: MEMO, keys: [{ pubkey: payer, isSigner: true, isWritable: false }], data: new TextEncoder().encode(acc.memo) });
+    const tx = new Transaction().add(transfer, memo);
+    tx.feePayer = payer; tx.recentBlockhash = (await conn.getLatestBlockhash()).blockhash;
+    out(`<p class="muted">Approve $${(acc.amount_microunits / 1e6).toFixed(2)} USDC in Phantom…</p>`);
+    const { signature } = await provider.signAndSendTransaction(tx);
+    out(`<p class="muted">Paid (<a href="${solscanTx(signature)}" target="_blank" rel="noopener">${short(signature)}</a>). Waiting for confirmation…</p>`);
+    await conn.confirmTransaction(signature, "confirmed");
+    out(`<p class="muted">Confirmed. Solvent is writing the report…</p>`);
+    const proof = btoa(JSON.stringify({ quote_id: quote.quote_id, signature, payer_wallet: payer.toBase58() }));
+    const s = await fetch(url, { method: "POST", headers: { "PAYMENT-SIGNATURE": proof } });
+    const res = await s.json();
+    if (!s.ok) throw new Error(res.error || s.status);
+    out(`<div class="report">${esc(res.report.markdown)}</div><p class="sub">Written by ${esc(res.report.model)} via UsePod for ${usd(res.report.costUsd, 5)}, paid from Solvent's own reserve · your payment <a href="${solscanTx(signature)}" target="_blank" rel="noopener">${short(signature)}</a></p>`);
+  } catch (err) {
+    out(`<p class="s-bad">${esc(err.message || err)}</p>`);
+  } finally { $("buyBtn").disabled = false; }
+};
+$("auditWallet").addEventListener("keydown", (e) => { if (e.key === "Enter") $("auditBtn").click(); });
+
+loadBooks();
+setInterval(loadBooks, 30_000);
+</script>
+</body>
+</html>
