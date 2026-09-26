@@ -10,6 +10,8 @@
 - **Audit any agent.** Free on-chain audit of any agent wallet's fee income. The AI solvency report is sold for $0.05 over x402, and Solvent pays UsePod to write it out of its own reserve.
 - **Hard caps.** Per-transaction and per-day spend caps are checked before anything is signed.
 
+**Live:** https://solvent-delta.vercel.app
+
 ## Quick start
 
 ```bash
