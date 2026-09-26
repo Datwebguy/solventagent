@@ -13,7 +13,7 @@ import {
 import { createTransferCheckedInstruction, getAssociatedTokenAddressSync } from "@solana/spl-token";
 import { MINTS } from "../config.js";
 import { reserveSpend } from "../guardrails.js";
-import { jupQuote, jupSwapInstructions } from "../jupiter.js";
+import { DEPOSIT_EXTRA_CU, jupQuote, jupSwapInstructions, withExtraComputeUnits } from "../jupiter.js";
 import { usdPrice } from "../prices.js";
 import { connection } from "../solana.js";
 import type { X402Rail } from "./client.js";
@@ -72,7 +72,7 @@ export async function depositSol(payer: Keypair, depositCode: string, lamports: 
     .depositSol(code, new anchor.BN(lamports.toString()), new anchor.BN(quote.otherAmountThreshold))
     .accounts({ usdcMint: USDC_MINT })
     .instruction();
-  const signature = await sendV0(payer, [...swap.before, deposit, ...swap.after], swap.alts);
+  const signature = await sendV0(payer, withExtraComputeUnits([...swap.before, deposit, ...swap.after], DEPOSIT_EXTRA_CU), swap.alts);
   return { signature, usdcMinOut: Number(quote.otherAmountThreshold) / 1e6 };
 }
 
@@ -104,7 +104,7 @@ export async function depositFromToken(
         .accounts({ usdcMint: USDC_MINT })
         .instruction()
     : await (program.methods as any).depositUsdc(code, minOut).accounts({ mint: USDC_MINT }).instruction();
-  const signature = await sendV0(payer, [...swap.before, deposit, ...swap.after], swap.alts);
+  const signature = await sendV0(payer, withExtraComputeUnits([...swap.before, deposit, ...swap.after], DEPOSIT_EXTRA_CU), swap.alts);
   return { signature, usdcDeposited: Number(quote.otherAmountThreshold) / 1e6 };
 }
 
@@ -132,7 +132,7 @@ export async function buildFeedTransaction(
     .accounts({ mint: USDC_MINT, depositor: payer })
     .instruction();
   const { blockhash } = await connection().getLatestBlockhash("confirmed");
-  const message = new TransactionMessage({ payerKey: payer, recentBlockhash: blockhash, instructions: [...swap.before, deposit, ...swap.after] }).compileToV0Message(swap.alts);
+  const message = new TransactionMessage({ payerKey: payer, recentBlockhash: blockhash, instructions: withExtraComputeUnits([...swap.before, deposit, ...swap.after], DEPOSIT_EXTRA_CU) }).compileToV0Message(swap.alts);
   return {
     transaction: new VersionedTransaction(message),
     usdcMinOut: Number(quote.otherAmountThreshold) / 1e6,

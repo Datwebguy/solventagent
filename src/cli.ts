@@ -1,4 +1,5 @@
-import { appendFileSync, existsSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
+import { Keypair } from "@solana/web3.js";
 import { auditWallet } from "./audit.js";
 import { books } from "./books.js";
 import { buyReport } from "./buy.js";
@@ -22,7 +23,7 @@ import {
   x402Settle,
 } from "./usepod/client.js";
 import { depositFromToken, depositSol, depositUsdc, payX402Rail } from "./usepod/pay.js";
-import { loadTreasury } from "./wallet.js";
+import { loadTreasury, parseSecretKey } from "./wallet.js";
 
 const [, , cmd, ...args] = process.argv;
 const flag = (name: string) => args.includes(`--${name}`);
@@ -90,32 +91,43 @@ const commands: Record<string, () => Promise<void>> = {
     console.log(`Deposited $${usd} into the compute reserve: ${solscanTx(sig)} (ledger #${e.seq})`);
   },
 
-  /** One thought through the same code path as the proxy: paid from the reserve, model chosen by runway. */
+  /** One thought through the proxy: paid from the reserve, model chosen by runway. */
   async think() {
     const prompt = positional[0];
     if (!prompt) throw new Error('usage: think "<prompt>"');
-    const token = requireToken();
-    const meter = new ReserveMeter(() => tokenBalanceMicros(token));
-    await meter.init();
-    const app = createProxy({ apiToken: token, ledger, meter });
-    const res = await app.request("/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ model: "auto", messages: [{ role: "user", content: prompt }] }),
-    });
-    const body = (await res.json()) as any;
-    if (res.status !== 200) throw new Error(`${res.status}: ${JSON.stringify(body).slice(0, 400)}`);
-    console.log(body?.choices?.[0]?.message?.content);
-    await app.drain();
-    const booked = ledger.head();
+    const body = JSON.stringify({ model: "auto", messages: [{ role: "user", content: prompt }] });
+    // If the server is running, go through it so the thought is booked exactly once.
+    const base = `http://${env.SOLVENT_PROXY_HOST === "0.0.0.0" ? "127.0.0.1" : env.SOLVENT_PROXY_HOST}:${env.SOLVENT_PROXY_PORT}`;
+    const serverUp = await fetch(`${base}/health`, { signal: AbortSignal.timeout(800) }).then((r) => r.ok).catch(() => false);
+    let res: Response;
+    let drain = async () => {};
+    let reserveUsd: () => number;
+    if (serverUp) {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (env.SOLVENT_PROXY_KEY) headers.Authorization = `Bearer ${env.SOLVENT_PROXY_KEY}`;
+      res = await fetch(`${base}/v1/chat/completions`, { method: "POST", headers, body });
+      reserveUsd = () => NaN;
+      console.log("(via the running Solvent server)");
+    } else {
+      const token = requireToken();
+      const meter = new ReserveMeter(() => tokenBalanceMicros(token));
+      await meter.init();
+      const app = createProxy({ apiToken: token, ledger, meter });
+      res = await app.request("/v1/chat/completions", { method: "POST", headers: { "Content-Type": "application/json" }, body });
+      drain = app.drain;
+      reserveUsd = () => meter.reserveUsd;
+    }
+    const answer = (await res.json()) as any;
+    if (res.status !== 200) throw new Error(`${res.status}: ${JSON.stringify(answer).slice(0, 400)}`);
+    console.log(answer?.choices?.[0]?.message?.content);
+    await drain();
+    const booked = serverUp ? undefined : ledger.head();
     console.log({
       tier: res.headers.get("x-solvent-tier"),
       model: res.headers.get("x-solvent-model"),
-      costUsd: booked?.kind === "thought" ? -booked.usd : undefined,
-      costSettled: booked?.meta?.costSettled,
-      reserveUsd: meter.reserveUsd,
+      costUsd: booked?.kind === "thought" ? -booked.usd : "booked by the server",
+      reserveUsd: reserveUsd(),
       runwayDays: res.headers.get("x-solvent-runway-days"),
-      ledger: booked?.seq,
     });
   },
 
@@ -139,7 +151,7 @@ const commands: Record<string, () => Promise<void>> = {
     });
     if (res.status !== 200) throw new Error(`UsePod ${res.status}: ${JSON.stringify(res.body).slice(0, 400)}`);
     const capUsd = asset === "USDC" ? rail.amount_microunits / 1e6 : (rail.amount_microunits / 1e9) * (await usdPrice(MINTS.SOL));
-    const e = ledger.append({ kind: "thought", usd: -capUsd, txSig: sig, meta: { rail: "x402", asset, quoteId: q.quote_id, usage: res.usage } });
+    const e = ledger.append({ kind: "thought", usd: -capUsd, txSig: sig, meta: { rail: "x402", asset, quoteId: q.quote_id, usage: res.usage, costIsCap: true, note: "cap paid up front; UsePod credits the unused part to this wallet for later x402 calls" } });
     console.log(res.body?.choices?.[0]?.message?.content);
     console.log({ paidCapUsd: capUsd, tx: solscanTx(sig), ledger: e.seq });
   },
@@ -193,13 +205,19 @@ const commands: Record<string, () => Promise<void>> = {
     console.log(JSON.stringify(await auditWallet(wallet), null, 2));
   },
 
-  /** Buys a paid AI solvency report from a Solvent site over x402: audit:buy <wallet> --base <url> --yes */
+  /** Buys a paid AI report from a Solvent site over x402: audit:buy <wallet> --base <url> --payer <keypair.json> --yes */
   async "audit:buy"() {
-    const wallet = positional[0];
-    const base = args[args.indexOf("--base") + 1];
-    if (!wallet || !args.includes("--base") || !base) throw new Error("usage: audit:buy <wallet> --base <https://site> --yes");
+    const opt = (name: string) => (args.includes(`--${name}`) ? args[args.indexOf(`--${name}`) + 1] : undefined);
+    const wallet = positional.find((p) => !p.startsWith("http") && !p.endsWith(".json"));
+    const base = opt("base");
+    const payerPath = opt("payer");
+    if (!wallet || !base || !payerPath) throw new Error("usage: audit:buy <wallet> --base <https://site> --payer <keypair.json> --yes");
     requireYes("audit:buy");
-    const { result, paymentTx } = await buyReport(loadTreasury(), base, wallet);
+    const payer = Keypair.fromSecretKey(parseSecretKey(readFileSync(payerPath, "utf8")));
+    if (env.SOLVENT_TREASURY_ADDRESS && payer.publicKey.toBase58() === env.SOLVENT_TREASURY_ADDRESS) {
+      throw new Error("the payer must not be the treasury that sells the report");
+    }
+    const { result, paymentTx } = await buyReport(payer, base, wallet);
     console.log(result.report?.markdown);
     console.log({ paid: solscanTx(paymentTx), model: result.report?.model, reportCostUsd: result.report?.costUsd });
   },

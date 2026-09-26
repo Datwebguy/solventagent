@@ -8,7 +8,7 @@ import { FileLedger, burnUsdPerDay } from "./ledger.js";
 import { Policy } from "./policy.js";
 import { usdPrice } from "./prices.js";
 import { sendMemo, solBalance, solscanTx } from "./solana.js";
-import { BUCKET, EMPTY_PENDING, planCycle, type Pending, type Plan } from "./treasurer.js";
+import { BUCKET, EMPTY_PENDING, needsAnchor, planCycle, type Pending, type Plan } from "./treasurer.js";
 import { tokenBalanceMicros } from "./usepod/client.js";
 import { depositSol } from "./usepod/pay.js";
 import { loadTreasury } from "./wallet.js";
@@ -147,11 +147,11 @@ export async function runCycle({ execute, log = console.log }: { execute: boolea
 
   let anchoredSeq = state.anchoredSeq;
   const head = ledger.head();
-  if (head && head.seq !== anchoredSeq) {
+  if (head && needsAnchor(head, anchoredSeq)) {
     try {
       const sig = await sendMemo(kp, `solvent:ledger:${head.seq}:${head.hash}`);
-      ledger.append({ kind: "anchor", usd: 0, txSig: sig, meta: { seq: head.seq, hash: head.hash } });
-      anchoredSeq = head.seq;
+      const anchor = ledger.append({ kind: "anchor", usd: 0, txSig: sig, meta: { seq: head.seq, hash: head.hash } });
+      anchoredSeq = anchor.seq;
       report.txs.push({ kind: "anchor", signature: sig });
       log(`  anchored ledger #${head.seq} on-chain: ${solscanTx(sig)}`);
     } catch (err) {

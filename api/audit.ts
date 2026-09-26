@@ -10,7 +10,7 @@ export async function GET(request: Request): Promise<Response> {
     return Response.json({ error: "pass ?wallet=<solana address>" }, { status: 400 });
   }
   try {
-    const audit = await auditWallet(wallet);
+    const audit = await auditWallet(wallet, 60); // bounded so a busy wallet cannot hit the function timeout
     return Response.json(audit, { headers: { "cache-control": "public, s-maxage=300" } });
   } catch (err) {
     return Response.json({ error: err instanceof Error ? err.message : String(err) }, { status: 502 });

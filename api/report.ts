@@ -54,7 +54,7 @@ export async function POST(request: Request): Promise<Response> {
     const tx = await getParsedTx(proof.signature, connection());
     verifyPayment(tx, claims);
 
-    const audit = await auditWallet(wallet);
+    const audit = await auditWallet(wallet, 60);
     const report = await writeReport(audit, token);
     const record: SaleRecord = {
       kind: "audit_sale",

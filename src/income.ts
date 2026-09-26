@@ -68,7 +68,9 @@ export async function fetchInflows(
   incomeSources: Set<string>,
   untilSignature?: string,
 ): Promise<{ inflows: Inflow[]; newest: string | undefined }> {
-  const sigs = await withRetry(() => connection().getSignaturesForAddress(treasury, { until: untilSignature, limit: 200 }));
+  const sigs = await collectSignaturesSince(
+    (before) => withRetry(() => connection().getSignaturesForAddress(treasury, { until: untilSignature, before, limit: 1000 })),
+  );
   const newest = sigs[0]?.signature ?? untilSignature;
   const inflows: Inflow[] = [];
   for (const s of sigs.filter((x) => !x.err).reverse()) {
@@ -78,6 +80,26 @@ export async function fetchInflows(
     if (inflow) inflows.push(inflow);
   }
   return { inflows, newest };
+}
+
+/**
+ * Every signature newer than the cursor, newest first. RPCs return at most one page per call,
+ * so keep paging backwards with `before` until a short page says the cursor was reached.
+ */
+export async function collectSignaturesSince<T extends { signature: string }>(
+  page: (before: string | undefined) => Promise<T[]>,
+  pageSize = 1000,
+  maxPages = 20,
+): Promise<T[]> {
+  const all: T[] = [];
+  let before: string | undefined;
+  for (let i = 0; i < maxPages; i++) {
+    const batch = await page(before);
+    all.push(...batch);
+    if (batch.length < pageSize) return all;
+    before = batch[batch.length - 1]!.signature;
+  }
+  throw new Error(`more than ${pageSize * maxPages} new transactions since the last cycle; run cycles more often`);
 }
 
 /** Newest signature touching the treasury, used as the cursor for the next cycle. */

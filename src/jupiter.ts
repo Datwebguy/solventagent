@@ -1,4 +1,5 @@
 import {
+  ComputeBudgetProgram,
   PublicKey,
   TransactionInstruction,
   VersionedTransaction,
@@ -69,6 +70,21 @@ export const jupIxToWeb3 = (ix: JupIx) =>
     keys: ix.accounts.map((a) => ({ pubkey: new PublicKey(a.pubkey), isSigner: a.isSigner, isWritable: a.isWritable })),
     data: Buffer.from(ix.data, "base64"),
   });
+
+/**
+ * Raises the transaction's compute-unit limit by `extraUnits`. Jupiter sizes its limit for the
+ * swap alone; composite transactions (swap + UsePod deposit) need headroom. Priority fees are
+ * charged on the requested limit, so add only what the extra instructions need.
+ */
+export function withExtraComputeUnits(ixs: TransactionInstruction[], extraUnits: number, fallbackUnits = 200_000): TransactionInstruction[] {
+  const isSetLimit = (ix: TransactionInstruction) => ix.programId.equals(ComputeBudgetProgram.programId) && ix.data[0] === 2;
+  const existing = ixs.find(isSetLimit);
+  const base = existing ? existing.data.readUInt32LE(1) : fallbackUnits;
+  return [ComputeBudgetProgram.setComputeUnitLimit({ units: Math.min(1_400_000, base + extraUnits) }), ...ixs.filter((ix) => !isSetLimit(ix))];
+}
+
+/** Headroom for the UsePod deposit (~20K CU measured) plus a possible USDC account creation. */
+export const DEPOSIT_EXTRA_CU = 60_000;
 
 /**
  * Swap instructions (not a full transaction) so a swap can be composed with other

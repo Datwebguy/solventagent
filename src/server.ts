@@ -33,7 +33,12 @@ setInterval(() => {
   meter
     .resync()
     .then((diff) => {
-      if (diff > 0) ledger.append({ kind: "compute_topup", usd: 0, meta: { source: "external", reserveCreditUsd: diff / 1e6 } });
+      if (diff > 0) {
+        // A top-up booked by the CLI or the cycle in the last 15 minutes is not an outside credit.
+        const since = Date.now() - 15 * 60_000;
+        const bookedRecently = ledger.all().some((e) => e.kind === "compute_topup" && e.txSig && Date.parse(e.ts) >= since);
+        if (!bookedRecently) ledger.append({ kind: "compute_topup", usd: 0, meta: { source: "external", reserveCreditUsd: diff / 1e6 } });
+      }
       else if (diff < 0) ledger.append({ kind: "thought", usd: diff / 1e6, meta: { via: "reconciliation" } });
     })
     .catch((err) => log(`resync failed: ${err}`));

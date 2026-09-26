@@ -91,3 +91,11 @@ docker run -d --env-file .env -e SOLVENT_PROXY_KEY=<24+ chars> \
 npm test                    # unit tests (spend caps, policy, metabolism, ledger, proxy, treasury, x402)
 npx tsx scripts/smoke.ts    # read-only checks against Jupiter, UsePod and a real ClawPump payout
 ```
+
+## Known limitations
+
+- **Free RPC endpoints.** Audits and the Solvency Index read the chain through free endpoints, so they are rate-limited and slow (about a minute per project in the index). Set `SOLANA_READ_RPC_URLS` (for example a Helius URL) to speed them up.
+- **Audits sample recent history.** Audits read a wallet's last 40–60 transactions. The index measures income per payout wallet, so a wallet shared by several agents shows their combined income.
+- **Books need the runtime.** The public books only refresh while `src/server.ts` is running with `SOLVENT_PUBLISH=1`.
+- **One writer at a time.** Run the CLI's spending commands through the server when it is up (`think` does this automatically).
+- **Upstream advisories.** `npm audit` reports advisories in dependencies of `@solana/web3.js` 1.x and `@coral-xyz/anchor` (`bigint-buffer`, `uuid`, `toml`). None of the flagged functions are called with untrusted input here; fixing them requires major upgrades of those libraries.

@@ -68,3 +68,13 @@ export function planCycle(i: PlanInput): Plan {
   }
   return { targetReserveUsd, split, actions, pendingAfter: pending };
 }
+
+/**
+ * Whether the ledger head needs a new on-chain anchor. The anchor entry itself does not
+ * count as new activity, so an idle ledger is anchored once, not every cycle.
+ */
+export function needsAnchor(head: { seq: number; kind: string } | undefined, anchoredSeq: number | undefined): boolean {
+  if (!head) return false;
+  if (head.kind === "anchor") return false;
+  return head.seq !== anchoredSeq;
+}
