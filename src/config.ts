@@ -1,0 +1,29 @@
+import { config } from "dotenv";
+import { z } from "zod";
+
+config({ quiet: true });
+
+const Env = z.object({
+  SOLANA_RPC_URL: z.url().default("https://api.mainnet-beta.solana.com"),
+  // Treasury key: base58 (Phantom/Solflare export) or a JSON byte array. Never logged.
+  SOLVENT_TREASURY_SECRET: z.string().optional(),
+  SOLVENT_TREASURY_KEYPAIR_PATH: z.string().optional(),
+  USEPOD_API_TOKEN: z.string().optional(),
+  USEPOD_DEPOSIT_CODE: z
+    .string()
+    .regex(/^[0-9a-f]{16}$/, "deposit code is 16 hex chars")
+    .optional(),
+  // Hard caps, enforced before any transaction is signed.
+  SOLVENT_MAX_TX_USD: z.coerce.number().positive().default(5),
+  SOLVENT_MAX_DAY_USD: z.coerce.number().positive().default(10),
+  SOLVENT_DATA_DIR: z.string().default("data"),
+});
+
+export type Env = z.infer<typeof Env>;
+
+export const env: Env = Env.parse(process.env);
+
+export const MINTS = {
+  USDC: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+  SOL: "So11111111111111111111111111111111111111112",
+} as const;
