@@ -37,5 +37,6 @@ app.get("/__phone", (c) =>
 );
 app.get("/", (c) => c.html(readFileSync("public/index.html", "utf8")));
 app.get("/agent/:wallet", (c) => c.html(readFileSync("public/agent.html", "utf8")));
+app.get("/wallet.js", (c) => c.body(readFileSync("public/wallet.js", "utf8"), 200, { "content-type": "text/javascript" }));
 app.get("/style.css", (c) => c.body(readFileSync("public/style.css", "utf8"), 200, { "content-type": "text/css" }));
 serve({ fetch: app.fetch, hostname: "127.0.0.1", port: 5173 }, () => console.log("preview on http://127.0.0.1:5173"));

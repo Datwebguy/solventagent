@@ -37,7 +37,7 @@
       <a href="https://github.com/Datwebguy/solventagent#readme" target="_blank" rel="noopener">Developers ↗</a>
     </nav>
     <div class="nav-actions">
-      <button class="btn btn-ghost btn-sm" id="walletBtn" type="button">Connect Phantom</button>
+      <button class="btn btn-ghost btn-sm" id="walletBtn" type="button">Connect wallet</button>
       <button class="icon-btn" id="menuBtn" type="button" aria-expanded="false" aria-controls="navLinks" aria-label="Open menu">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
       </button>
@@ -240,7 +240,7 @@
       <div>
         <span class="eyebrow">Uses $ANSEM</span>
         <h2 id="giveTitle">Keep Solvent thinking</h2>
-        <p>Send $ANSEM from your Phantom wallet. It's converted and added straight to Solvent's thinking budget in a single step, and it shows up in the books above.</p>
+        <p>Send $ANSEM from your Solana wallet (Phantom, Solflare, Backpack and others). It's converted and added straight to Solvent's thinking budget in a single step, and it shows up in the books above.</p>
       </div>
       <div>
         <div class="chips" role="group" aria-label="Choose an amount">
@@ -251,9 +251,9 @@
         </div>
         <label class="amount"><input id="giveAmount" inputmode="decimal" value="10" aria-label="How much $ANSEM to send" autocomplete="off" /><span>$ANSEM</span></label>
         <div class="estimate" id="giveEstimate">&nbsp;</div>
-        <button class="btn btn-primary btn-block" id="giveBtn" type="button">Send with Phantom</button>
+        <button class="btn btn-primary btn-block" id="giveBtn" type="button">Send $ANSEM</button>
         <ol class="progress" id="giveSteps" hidden>
-          <li>Approve in Phantom</li>
+          <li>Approve in your wallet</li>
           <li>Confirming on Solana</li>
           <li>Added to Solvent's budget</li>
         </ol>
@@ -377,6 +377,7 @@
 <div class="tip" id="tip" role="tooltip" hidden></div>
 <div class="toasts" id="toasts" aria-live="polite"></div>
 
+<script src="/wallet.js"></script>
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -476,7 +477,7 @@ const sectionObserver = new IntersectionObserver((list) => {
 }, { rootMargin: "-45% 0px -50% 0px" });
 ["how", "books", "ranking", "check", "who"].forEach((id) => sectionObserver.observe($(id)));
 
-// ---------- wallet (Phantom); the wallet library loads only when needed ----------
+// ---------- wallet (any Solana wallet, picked in wallet.js); the wallet library loads only when needed ----------
 let wallet = null;
 let web3Promise;
 function loadWeb3() {
@@ -489,35 +490,33 @@ function loadWeb3() {
     document.head.appendChild(s);
   }));
 }
-const phantom = () => window.phantom?.solana || (window.solana?.isPhantom ? window.solana : null);
 const short = (s, n = 4) => (s ? `${s.slice(0, n)}…${s.slice(-n)}` : "");
 function renderWallet() {
   const b = $("walletBtn");
-  if (wallet) { b.innerHTML = `<span class="wallet-dot" aria-hidden="true"></span>${esc(short(wallet.publicKey.toBase58()))}`; b.title = "Connected. Click to disconnect."; }
-  else { b.textContent = "Connect Phantom"; b.title = ""; }
+  if (wallet) { b.innerHTML = `<span class="wallet-dot" aria-hidden="true"></span>${esc(short(wallet.address))}`; b.title = `Connected with ${wallet.name}. Click to disconnect.`; }
+  else { b.textContent = "Connect wallet"; b.title = ""; }
 }
 async function connectWallet() {
-  const p = phantom();
-  if (!p) {
-    toast("Phantom wallet not found. Opening phantom.app so you can install it.");
-    window.open("https://phantom.app/", "_blank", "noopener");
-    throw new Error("Install the Phantom wallet, then try again.");
-  }
-  const res = await p.connect();
-  wallet = { provider: p, publicKey: res?.publicKey || p.publicKey };
+  wallet = await SolWallet.pick();
   renderWallet();
   return wallet;
 }
 function friendly(err) {
   const m = String(err?.message || err || "");
-  if (err?.code === 4001 || /reject|cancel|denied/i.test(m)) return "You cancelled in Phantom. Nothing was sent.";
+  if (err?.closed) return "No wallet connected. Nothing was sent.";
+  if (err?.code === 4001 || /reject|cancel|denied|declined/i.test(m)) return "You cancelled in your wallet. Nothing was sent.";
   if (/insufficient|debit/i.test(m)) return "Your wallet doesn't have enough funds for this.";
   return m || "Something went wrong. Please try again.";
 }
 $("walletBtn").onclick = async () => {
-  if (wallet) { try { await wallet.provider.disconnect(); } catch {} wallet = null; renderWallet(); toast("Wallet disconnected."); return; }
-  try { await connectWallet(); toast("Phantom connected."); } catch (e) { if (!/Install/.test(e.message)) toast(friendly(e)); }
+  if (wallet) { await wallet.disconnect(); wallet = null; renderWallet(); toast("Wallet disconnected."); return; }
+  try { await connectWallet(); toast(`${wallet.name} connected.`); } catch (e) { if (!e?.closed) toast(friendly(e)); }
 };
+// Opened inside a wallet app from the picker's phone links: offer to connect straight away.
+if (new URLSearchParams(location.search).get("connect") === "1") {
+  const u = new URL(location.href); u.searchParams.delete("connect"); history.replaceState(null, "", u);
+  setTimeout(() => $("walletBtn").click(), 400);
+}
 
 // ---------- tamper check (same fingerprints as the Solvent engine) ----------
 function canonicalJson(v) {
@@ -705,8 +704,8 @@ async function loadBooks() {
 function updateEstimate() {
   const amt = Number($("giveAmount").value);
   const px = snap?.prices?.ansem;
-  if (!(amt > 0)) { $("giveEstimate").textContent = "Enter how much $ANSEM to send."; $("giveBtn").textContent = "Send with Phantom"; return; }
-  $("giveBtn").textContent = `Send ${count(amt)} $ANSEM with Phantom`;
+  if (!(amt > 0)) { $("giveEstimate").textContent = "Enter how much $ANSEM to send."; $("giveBtn").textContent = "Send $ANSEM"; return; }
+  $("giveBtn").textContent = `Send ${count(amt)} $ANSEM`;
   if (!px) { $("giveEstimate").innerHTML = "&nbsp;"; return; }
   const usd = amt * px * 0.985;
   const per = snap?.books?.thoughts ? snap.books.spentOnThinkingUsd / snap.books.thoughts : 0.0165;
@@ -734,13 +733,14 @@ $("giveBtn").onclick = async () => {
   try {
     const w = wallet ?? (await connectWallet());
     steps($("giveSteps"), 0);
-    const [r, web3] = await Promise.all([fetch(`/api/feed?payer=${w.publicKey.toBase58()}&ansem=${amount}`, { method: "POST" }), loadWeb3()]);
+    const [r, web3] = await Promise.all([fetch(`/api/feed?payer=${w.address}&ansem=${amount}`, { method: "POST" }), loadWeb3()]);
     const j = await r.json();
     if (!r.ok) throw new Error(j.error || "Couldn't prepare the transaction. Please try again.");
     const tx = web3.VersionedTransaction.deserialize(Uint8Array.from(atob(j.transaction), (ch) => ch.charCodeAt(0)));
-    const { signature } = await w.provider.signAndSendTransaction(tx);
+    const conn = new web3.Connection(RPC, "confirmed");
+    const signature = await w.signAndSend(tx, web3, conn);
     steps($("giveSteps"), 1);
-    await new web3.Connection(RPC, "confirmed").confirmTransaction(signature, "confirmed");
+    await conn.confirmTransaction(signature, "confirmed");
     steps($("giveSteps"), 3);
     out.innerHTML = `<span class="ok">Thank you! Solvent's thinking budget grew by about ${esc(money(j.usdcToReserve))}.</span> <a href="${txUrl(signature)}" target="_blank" rel="noopener">View proof ↗</a>`;
     toast("Thank you! Your $ANSEM is now Solvent's thinking time.");
@@ -832,7 +832,7 @@ async function runCheck(name) {
         <div><b>Want the full picture?</b><span>A short written report on this agent's finances. Solvent pays for the AI that writes it.</span></div>
         <button class="btn btn-primary btn-sm" type="button" id="buyBtn">Get the report · $0.05</button>
       </div>
-      <ol class="progress" id="buySteps" hidden><li>Approve the payment in Phantom</li><li>Confirming on Solana</li><li>Solvent is writing your report</li></ol>
+      <ol class="progress" id="buySteps" hidden><li>Approve the payment in your wallet</li><li>Confirming on Solana</li><li>Solvent is writing your report</li></ol>
       <div class="out" id="reportOut" aria-live="polite"></div>
     </div>`;
     $("buyBtn").onclick = buyReport;
@@ -870,7 +870,7 @@ async function buyReport() {
     const acc = quote.accepts[0];
     const { PublicKey, Transaction, TransactionInstruction, Connection } = web3;
     const conn = new Connection(RPC, "confirmed");
-    const payer = w.publicKey;
+    const payer = new PublicKey(w.address);
     const TOKEN = new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
     const ATA = new PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL");
     const MEMO = new PublicKey("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr");
@@ -884,7 +884,7 @@ async function buyReport() {
     const tx = new Transaction().add(transfer, memo);
     tx.feePayer = payer; tx.recentBlockhash = (await conn.getLatestBlockhash()).blockhash;
     steps($("buySteps"), 0);
-    const { signature } = await w.provider.signAndSendTransaction(tx);
+    const signature = await w.signAndSend(tx, web3, conn);
     steps($("buySteps"), 1);
     await conn.confirmTransaction(signature, "confirmed");
     steps($("buySteps"), 2);

@@ -382,3 +382,27 @@
 }
 .setup-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 @media (max-width: 960px) { .setup-steps { grid-template-columns: 1fr; } }
+
+  /* wallet picker */
+  .wp-open { overflow: hidden; }
+  .wp-backdrop { position: fixed; inset: 0; z-index: 80; background: rgba(0, 0, 0, .6); display: grid; place-items: center; padding: 16px; animation: fade .15s ease; }
+  .wp-backdrop[hidden] { display: none !important; }
+  .wp-sheet { width: min(400px, 100%); max-height: calc(100dvh - 32px); overflow: auto; background: var(--surface); border: 1px solid var(--hairline-2); border-radius: var(--radius); box-shadow: 0 24px 60px -20px rgba(0, 0, 0, .9); padding: 18px; animation: rise .2s ease; }
+  .wp-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
+  .wp-head h2 { font-size: 18px; margin: 0; }
+  .wp-note { color: var(--muted); font-size: 14px; margin: 4px 0 14px; }
+  .wp-list { display: grid; gap: 8px; }
+  .wp-item { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 52px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--hairline); background: var(--surface-2); color: var(--ink); font: inherit; font-size: 15px; font-weight: 500; text-align: left; text-decoration: none; cursor: pointer; }
+  .wp-item:hover, .wp-item:focus-visible { border-color: var(--brand); outline: none; }
+  .wp-item:disabled { opacity: .6; cursor: default; }
+  .wp-item > span:nth-child(2) { flex: 1; }
+  .wp-icon { width: 32px; height: 32px; border-radius: 8px; flex: none; object-fit: contain; }
+  .wp-letter { display: grid; place-items: center; color: #fff; font-weight: 700; }
+  .wp-tag { font-size: 12px; color: var(--muted); }
+  .wp-more { margin-top: 14px; }
+  .wp-more summary { cursor: pointer; color: var(--link); font-size: 14px; margin-bottom: 10px; }
+  @keyframes fade { from { opacity: 0; } }
+  @media (max-width: 640px) {
+    .wp-backdrop { place-items: end center; padding: 0; }
+    .wp-sheet { width: 100%; border-radius: 20px 20px 0 0; padding: 18px 16px calc(18px + env(safe-area-inset-bottom)); max-height: 85dvh; }
+  }
