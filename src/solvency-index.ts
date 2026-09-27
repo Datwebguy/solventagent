@@ -12,7 +12,7 @@ export interface IndexEntry {
   mint: string;
   clawpumpFeesSol: number;
   payoutWallet: string | null;
-  audit: Pick<Audit, "feeIncome" | "thoughtsPerDay" | "scanned"> | null;
+  audit: Pick<Audit, "feeIncome" | "aiSpend" | "profit7dUsd" | "coverage" | "status" | "thoughtsPerDay" | "scanned"> | null;
   error?: string;
 }
 
@@ -72,7 +72,9 @@ export async function buildSolvencyIndex(
       entries.push({
         ...row,
         payoutWallet,
-        audit: audit ? { feeIncome: audit.feeIncome, thoughtsPerDay: audit.thoughtsPerDay, scanned: audit.scanned } : null,
+        audit: audit
+          ? { feeIncome: audit.feeIncome, aiSpend: audit.aiSpend, profit7dUsd: audit.profit7dUsd, coverage: audit.coverage, status: audit.status, thoughtsPerDay: audit.thoughtsPerDay, scanned: audit.scanned }
+          : null,
       });
       log(`#${row.rank} ${row.name}: ${payoutWallet ? `$${audit!.feeIncome.avgPerDayUsd.toFixed(2)}/day` : "no payout found"}`);
     } catch (err) {

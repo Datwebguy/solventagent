@@ -5,11 +5,12 @@ import { chat, tokenBalanceMicros } from "./usepod/client.js";
 const SYSTEM = `You are Solvent, the CFO for agentic companies on Solana.
 Write a short solvency report (max 180 words, markdown) about the agent wallet described in the JSON.
 Use only numbers present in the JSON; never invent figures. Cover:
-1. Income: ClawPump creator-fee payouts, run-rate per day, last 7 days.
-2. Holdings.
-3. What the income can pay for in thinking (thoughtsPerDay by tier).
-4. A one-line verdict: is this agent able to fund its own inference from its own income?
-Note that on-chain income is visible but compute spend is not, unless the agent publishes Solvent books.`;
+1. Income: token earnings (ClawPump fee payouts), per day, last 7 days.
+2. AI costs: money it sent to UsePod for AI (aiSpend), and profit over 7 days (profit7dUsd, coverage).
+3. Holdings.
+4. What the income can pay for in thinking (thoughtsPerDay by tier).
+5. A one-line verdict: can this agent fund its own AI from its own income?
+If aiSpend.payments is 0, say it does not pay for AI from this wallet (it may pay elsewhere). Write in plain language for non-technical readers.`;
 
 export interface Report {
   markdown: string;
@@ -29,7 +30,7 @@ export async function writeReport(audit: Audit, apiToken: string): Promise<Repor
         max_tokens: 600,
         messages: [
           { role: "system", content: SYSTEM },
-          { role: "user", content: JSON.stringify(audit) },
+          { role: "user", content: JSON.stringify({ ...audit, events: audit.events.slice(0, 10) }) },
         ],
       },
       { ceiling: tier.ceiling },

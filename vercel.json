@@ -3,5 +3,15 @@
   "framework": null,
   "buildCommand": "",
   "outputDirectory": "public",
-  "functions": { "api/*.ts": { "maxDuration": 60 } }
+  "functions": {
+    "api/*.ts": {
+      "maxDuration": 60
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/agent/:wallet",
+      "destination": "/agent.html"
+    }
+  ]
 }

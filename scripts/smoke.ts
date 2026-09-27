@@ -3,6 +3,7 @@
  *   npx tsx scripts/smoke.ts
  */
 import { MINTS } from "../src/config.js";
+import { classifyAiPayment } from "../src/aispend.js";
 import { classifyInflow } from "../src/income.js";
 import { jupQuote } from "../src/jupiter.js";
 import { usdPrices } from "../src/prices.js";
@@ -50,6 +51,22 @@ const checks: [string, () => Promise<string>][] = [
       const inflow = classifyInflow(tx, PAYOUT_SIG, PAYOUT_RECIPIENT, new Set());
       if (inflow?.source !== "clawpump_fees") throw new Error(`misclassified: ${JSON.stringify(inflow)}`);
       return `${(inflow.lamports / 1e9).toFixed(6)} SOL classified as clawpump_fees`;
+    },
+  ],
+  [
+    "AI-spending detector on Solvent's real UsePod top-ups",
+    async () => {
+      const wallet = "8kZBBhPkM9bHhHuUeCzLdNu6eekwTfvNgsF1oPUVZ6YS";
+      const cases: [string, number][] = [
+        ["5RADVjTywDhM7MgxjSxEsqtmaBoZ6p6RS11wrYeq785Ri5gHf3PMgzBFdTrhgxbYrGfMZsiTd6pMRvDsd4GJzgLh", 1.990085],
+        ["3enYfmzeXPqnesdvYXguCYNqisCvFWsz3QFZ1YPiHspSRXwhVDg1b8dbjw7UM3baTg2RMtpfGBkgZJ2WMVgXb4vA", 0.985777],
+      ];
+      for (const [sig, want] of cases) {
+        const tx = await getParsedTx(sig, connection());
+        const got = tx && classifyAiPayment(tx, wallet, 120);
+        if (!got || Math.abs(got.usd - want) > 1e-9) throw new Error(`${sig.slice(0, 8)}: expected $${want}, got ${JSON.stringify(got)}`);
+      }
+      return "both top-ups read exactly ($1.990085 and $0.985777)";
     },
   ],
 ];
