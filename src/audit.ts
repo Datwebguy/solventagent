@@ -4,7 +4,7 @@ import { MINTS } from "./config.js";
 import { classifyInflow } from "./income.js";
 import { DEFAULT_TIERS } from "./metabolism.js";
 import { usdPrices } from "./prices.js";
-import { getParsedTx, readConnection, solBalance, tokenBalance, withRetry } from "./solana.js";
+import { getParsedTx, recentSignatures, solBalance, tokenBalance } from "./solana.js";
 
 /** Plain-language standing of an agent, from public records only. */
 export type AgentStatus = "SOLVENT" | "AT RISK" | "NO AI COSTS SEEN" | "NO ACTIVITY";
@@ -70,7 +70,7 @@ function perDay(items: { usd: number; t: number }[], now: number): number {
 export async function auditWallet(address: string, maxTransactions = 150, now = Date.now()): Promise<Audit> {
   const owner = new PublicKey(address);
   const [sigsRaw, prices] = await Promise.all([
-    withRetry(() => readConnection().getSignaturesForAddress(owner, { limit: maxTransactions })),
+    recentSignatures(owner, maxTransactions),
     usdPrices([MINTS.SOL, MINTS.ANSEM]),
   ]);
   const sigs = sigsRaw.filter((s) => !s.err);

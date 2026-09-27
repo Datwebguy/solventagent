@@ -35,6 +35,23 @@ export async function withRetry<T>(fn: () => Promise<T>, tries = 8): Promise<T> 
 }
 
 /**
+ * A wallet's recent transaction signatures. Some free endpoints return only a day or so of
+ * history to servers, so when the answer is short, also ask Solana's public endpoint and keep
+ * whichever list reaches further back.
+ */
+export async function recentSignatures(owner: PublicKey, limit: number) {
+  const first = await withRetry(() => readConnection().getSignaturesForAddress(owner, { limit }));
+  if (first.length >= limit) return first;
+  try {
+    const fallback = new Connection("https://api.mainnet-beta.solana.com", { commitment: "confirmed", disableRetryOnRateLimit: true });
+    const second = await withRetry(() => fallback.getSignaturesForAddress(owner, { limit }), 4);
+    return second.length > first.length ? second : first;
+  } catch {
+    return first;
+  }
+}
+
+/**
  * Parsed transaction, accepting any version the RPC can return (v0 and the newer v1).
  * Returns null instead of throwing when a transaction cannot be read, so one odd
  * transaction never breaks a whole scan.
