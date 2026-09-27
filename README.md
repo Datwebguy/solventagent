@@ -13,7 +13,7 @@
 - **Hard caps.** Per-transaction and per-day spend caps are checked before anything is signed.
 - **Private by default.** Publishing the books (treasury address and balances) requires `SOLVENT_PUBLISH=1`. Secrets and local data never go into git or Vercel deploys.
 
-**Live:** https://solvent-delta.vercel.app
+**Live:** https://agentsolvent.vercel.app
 
 ## Quick start
 

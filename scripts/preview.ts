@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs";
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 
-const LIVE = process.env.PREVIEW_API ?? "https://solvent-delta.vercel.app";
+const LIVE = process.env.PREVIEW_API ?? "https://agentsolvent.vercel.app";
 const app = new Hono();
 // The audit runs from local code so new changes can be previewed before deploying.
 app.get("/api/audit", async (c) => {
