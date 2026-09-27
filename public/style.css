@@ -342,3 +342,43 @@
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
   }
+
+/* ---------- phone layout ---------- */
+.give > div, .example > div { min-width: 0; }
+@media (max-width: 860px) {
+  .give { grid-template-columns: minmax(0, 1fr); }
+  .example { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 640px) {
+  .section { padding-top: 40px; }
+  .section-head { margin-bottom: 14px; }
+  .section-head h2 { font-size: 26px; }
+  .hero { padding-top: 24px; padding-bottom: 20px; gap: 20px; }
+  h1 { font-size: 34px; margin: 14px 0 12px; }
+  .lede { font-size: 16px; margin-bottom: 18px; }
+  .trust { display: none; }
+  .cta-row { gap: 10px; }
+  .health { padding: 18px; }
+  .hero-fig { font-size: 46px; margin-top: 16px; }
+  .card { padding: 16px; }
+  /* problem / who cards: icon beside the text */
+  .problem { display: grid; grid-template-columns: 40px minmax(0, 1fr); column-gap: 14px; }
+  .problem .pico { width: 40px; height: 40px; margin: 0; grid-row: span 3; }
+  .problem h3 { font-size: 16px; }
+  .problem .btn { grid-column: 2; }
+  /* steps: tighter */
+  .step .ico { width: 36px; height: 36px; margin-bottom: 10px; }
+  .step p { margin-bottom: 10px; }
+  /* search: full-width field that stays tappable */
+  .search { flex-direction: column; }
+  .search input { flex: none; width: 100%; height: 50px; }
+  .search .btn { height: 48px; }
+  /* ranking: the whole row opens the agent's page, no per-row button */
+  .rrow { grid-template-columns: 24px minmax(0, 1fr) auto; }
+  .rrow .go { display: none; }
+  .pod .big { font-size: 26px; }
+  .feed li { gap: 10px; }
+  .amount input { font-size: 18px; }
+}
+.setup-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 960px) { .setup-steps { grid-template-columns: 1fr; } }

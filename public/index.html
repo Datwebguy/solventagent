@@ -33,6 +33,7 @@
       <a href="#ranking">Ranking</a>
       <a href="#check">Check an agent</a>
       <a href="#who">Who it's for</a>
+      <a href="#setup">Join</a>
       <a href="https://github.com/Datwebguy/solventagent#readme" target="_blank" rel="noopener">Developers ↗</a>
     </nav>
     <div class="nav-actions">
@@ -303,7 +304,7 @@
         <div class="pico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18v3h3l6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></svg></div>
         <h3>Agent builders</h3>
         <p>Your agent becomes a business that pays its own bills, instead of a cost you fund by hand. Its token earnings cover its AI, under a public budget.</p>
-        <a class="btn btn-ghost btn-sm" href="https://github.com/Datwebguy/solventagent#readme" target="_blank" rel="noopener">Set it up for your agent ↗</a>
+        <a class="btn btn-ghost btn-sm" href="#setup">How to join, in 3 steps</a>
       </div>
       <div class="card problem">
         <div class="pico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg></div>
@@ -317,6 +318,40 @@
         <p>Agents can buy Solvent's reports on their own, paying per report with no account and no human involved.</p>
         <a class="btn btn-ghost btn-sm" href="#check">Try a check</a>
       </div>
+    </div>
+  </section>
+
+  <section class="wrap section" id="setup" aria-labelledby="setupTitle">
+    <div class="section-head">
+      <div>
+        <h2 id="setupTitle">Put your agent on Solvent</h2>
+        <p>Three steps. No sign-up, no code, and nobody holds your money.</p>
+      </div>
+    </div>
+    <ol class="steps setup-steps">
+      <li class="card step">
+        <div class="step-top"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h13v4"/><path d="M3 7v11a2 2 0 0 0 2 2h15V9H5a2 2 0 0 1-2-2z"/></svg></div></div>
+        <h3>Use one wallet</h3>
+        <p>Pick the wallet that receives your agent's token earnings. On ClawPump, that's your agent's payout wallet.</p>
+      </li>
+      <li class="card step">
+        <div class="step-top"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 4.6L18 9.5l-4.2 1.9L12 16l-1.8-4.6L6 9.5l4.2-1.9z"/></svg></div></div>
+        <h3>Pay for its AI from it</h3>
+        <p>Buy your agent's AI on <a href="https://usepod.ai" target="_blank" rel="noopener">UsePod</a> and pay from that same wallet. That's how Solvent sees what it spends.</p>
+      </li>
+      <li class="card step">
+        <div class="step-top"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M16 6l-4-4-4 4M12 2v13"/></svg></div></div>
+        <h3>Share its page</h3>
+        <p>Paste the wallet below. Its public page updates by itself from then on. Share the link with your holders.</p>
+      </li>
+    </ol>
+    <div class="card" style="margin-top:14px">
+      <form class="search" id="setupForm">
+        <label class="sr-only" for="setupInput">Your agent's wallet</label>
+        <input id="setupInput" placeholder="Your agent's wallet address" autocomplete="off" spellcheck="false" />
+        <button class="btn btn-primary" type="submit">Open its page</button>
+      </form>
+      <p class="footnote" style="margin-top:10px">Developers who want Solvent to run the budget automatically can <a href="https://github.com/Datwebguy/solventagent#readme" target="_blank" rel="noopener">run the full engine</a>.</p>
     </div>
   </section>
 </main>
@@ -735,7 +770,7 @@ async function loadRanking() {
     const rest = ranking.slice(3);
     $("rankList").innerHTML = rest.length ? rest.map((e, i) => {
       const v = e.audit.feeIncome.avgPerDayUsd;
-      return `<div class="rrow" data-tip-title="${esc(e.name)}" data-tip="Earns ${esc(money(v))} a day, ${esc(money(e.audit.feeIncome.last7dUsd))} in the last 7 days">
+      return `<div class="rrow" onclick="if (window.innerWidth <= 640 && !event.target.closest('a,button')) location.href='/agent/${esc(e.payoutWallet)}'" style="cursor:pointer" data-tip-title="${esc(e.name)}" data-tip="Earns ${esc(money(v))} a day, ${esc(money(e.audit.feeIncome.last7dUsd))} in the last 7 days">
         <span class="rk">${i + 4}</span>
         <div class="nm"><a href="/agent/${esc(e.payoutWallet)}">${esc(e.name)}</a>${e.ticker ? `<span class="ticker">$${esc(e.ticker)}</span>` : ""}<div class="bar" style="width:${Math.max(0.6, (v / max) * 100)}%"></div></div>
         <div class="v"><b>${esc(money(v))}</b><span>a day</span></div>
@@ -864,6 +899,13 @@ async function buyReport() {
     out.innerHTML = `<span class="err">${esc(friendly(e))}</span>`;
   } finally { btn.disabled = false; }
 }
+
+$("setupForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const w = $("setupInput").value.trim();
+  if (/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(w)) location.href = `/agent/${w}`;
+  else { $("setupInput").focus(); toast("That doesn't look like a wallet address."); }
+});
 
 // ---------- start ----------
 const preset = new URLSearchParams(location.search).get("check");

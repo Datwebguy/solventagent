@@ -29,8 +29,11 @@ app.all("/api/*", async (c) => {
   headers.delete("content-length");
   return new Response(res.body, { status: res.status, headers });
 });
+app.get("/__shot", (c) =>
+  c.html(`<body style="margin:0;background:#333"><div style="width:390px;height:${c.req.query("h") ?? 1700}px;overflow:hidden"><iframe src="${c.req.query("u") ?? "/"}" style="width:390px;height:16000px;border:0;display:block;margin-top:-${c.req.query("y") ?? 0}px"></iframe></div></body>`),
+);
 app.get("/__phone", (c) =>
-  c.html(`<body style="margin:0;background:#333"><iframe src="/" style="width:390px;height:${c.req.query("h") ?? 3600}px;border:0;display:block"></iframe></body>`),
+  c.html(`<body style="margin:0;background:#333"><iframe src="${c.req.query("u") ?? "/"}" style="width:390px;height:${c.req.query("h") ?? 3600}px;border:0;display:block"></iframe></body>`),
 );
 app.get("/", (c) => c.html(readFileSync("public/index.html", "utf8")));
 app.get("/agent/:wallet", (c) => c.html(readFileSync("public/agent.html", "utf8")));
