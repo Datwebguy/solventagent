@@ -127,6 +127,7 @@
       { name: "Solflare", color: "#fc7227", href: `https://solflare.com/ul/v1/browse/${url}?ref=${ref}` },
       { name: "Backpack", color: "#e33e3f", href: `https://backpack.app/ul/v1/browse/${url}?ref=${ref}` },
       { name: "Trust Wallet", color: "#3375bb", href: `https://link.trustwallet.com/open_url?coin_id=501&url=${url}` },
+      { name: "Coinbase Wallet", color: "#0052ff", href: `https://go.cb-w.com/dapp?cb_url=${url}` },
     ];
   }
   const GET = [
@@ -138,7 +139,9 @@
   // ---- the picker ----
   const escHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   const safeIcon = (src) => (typeof src === "string" && /^data:image\/(svg\+xml|png|webp|jpeg|gif)[;,]/i.test(src.trim()) ? src.trim() : null);
-  const badge = (name, color, icon) =>
+  // Official logos (wallet-icons.js) for wallets we link to; installed wallets bring their own.
+  const logo = (name) => safeIcon(window.WALLET_ICONS?.[name]);
+  const badge = (name, color, icon = logo(name)) =>
     icon ? `<img class="wp-icon" src="${escHtml(icon)}" alt="" />` : `<span class="wp-icon wp-letter" style="background:${color || "var(--surface-2)"}">${escHtml(name[0])}</span>`;
 
   let dialog;
@@ -175,15 +178,22 @@
       function render() {
         const wallets = detected();
         let html = "";
+        // Solana Mobile's connector (Android) is a way to reach wallet apps, not a wallet inside this browser.
+        const inBrowser = wallets.filter((w) => !/mobile wallet adapter/i.test(w.name));
         if (wallets.length) {
           html += `<p class="wp-note">Pick the wallet you want to use.</p><div class="wp-list">` +
-            wallets.map((w, i) => `<button class="wp-item" type="button" data-i="${i}">${badge(w.name, null, safeIcon(w.icon))}<span>${escHtml(w.name)}</span><span class="wp-tag">Found</span></button>`).join("") +
+            wallets.map((w, i) => {
+              const phone = /mobile wallet adapter/i.test(w.name);
+              return `<button class="wp-item" type="button" data-i="${i}">${badge(w.name, null, safeIcon(w.icon) || logo(w.name))}<span>${phone ? "A wallet app on this phone" : escHtml(w.name)}</span><span class="wp-tag">${phone ? "Recommended" : "Installed"}</span></button>`;
+            }).join("") +
             `</div>`;
-        } else if (isMobile) {
-          html += `<p class="wp-note">Choose your wallet app. This page opens inside it, and you can connect from there.</p><div class="wp-list">` +
+        }
+        if (isMobile && !inBrowser.length) {
+          html += `<p class="wp-note">${wallets.length ? "Or open this page inside your wallet app:" : "Choose your wallet app. This page opens inside it, and you can connect from there."}</p><div class="wp-list">` +
             appLinks().map((a) => `<a class="wp-item" href="${escHtml(a.href)}" rel="noopener">${badge(a.name, a.color)}<span>${escHtml(a.name)}</span><span class="wp-tag">Open app</span></a>`).join("") +
             `</div>`;
-        } else {
+        }
+        if (!wallets.length && !isMobile) {
           html += `<p class="wp-note">We couldn't find a Solana wallet in this browser. Add one, then refresh this page.</p>`;
         }
         if (!wallets.length || !isMobile) {
@@ -217,6 +227,14 @@
       document.documentElement.classList.add("wp-open");
       d.querySelector(".wp-item, .wp-close")?.focus();
     });
+  }
+
+  // On Android, load Solana Mobile's official wallet connector; it announces itself like any wallet.
+  if (/Android/i.test(navigator.userAgent) && document.head) {
+    const s = document.createElement("script");
+    s.src = "/wallet-mobile.js";
+    s.async = true;
+    document.head.appendChild(s);
   }
 
   window.SolWallet = { pick, isMobile, onChange: (fn) => listeners.add(fn), detected };

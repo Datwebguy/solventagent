@@ -37,6 +37,8 @@ app.get("/__phone", (c) =>
 );
 app.get("/", (c) => c.html(readFileSync("public/index.html", "utf8")));
 app.get("/agent/:wallet", (c) => c.html(readFileSync("public/agent.html", "utf8")));
+app.get("/wallet-icons.js", (c) => c.body(readFileSync("public/wallet-icons.js", "utf8"), 200, { "content-type": "text/javascript" }));
+app.get("/wallet-mobile.js", (c) => c.body(readFileSync("public/wallet-mobile.js", "utf8"), 200, { "content-type": "text/javascript" }));
 app.get("/wallet.js", (c) => c.body(readFileSync("public/wallet.js", "utf8"), 200, { "content-type": "text/javascript" }));
 app.get("/favicon.svg", (c) => c.body(readFileSync("public/favicon.svg", "utf8"), 200, { "content-type": "image/svg+xml" }));
 app.get("/brand/:f", (c) => c.body(readFileSync(`public/brand/${c.req.param("f").replace(/[^a-z0-9.-]/gi, "")}`), 200, { "content-type": c.req.param("f").endsWith(".png") ? "image/png" : "image/svg+xml" }));
