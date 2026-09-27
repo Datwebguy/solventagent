@@ -320,6 +320,29 @@
   .report ul { margin: 6px 0; padding-left: 20px; color: var(--ink-2); }
   .report p { margin: 6px 0; color: var(--ink-2); }
 
+
+  /* problem / who cards, status tags, example */
+  .problems { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+  @media (max-width: 860px) { .problems { grid-template-columns: 1fr; } }
+  .problem { display: flex; flex-direction: column; }
+  .problem h3 { margin: 0 0 6px; font-size: 17px; letter-spacing: -.01em; }
+  .problem p { margin: 0; color: var(--ink-2); font-size: 14.5px; flex: 1; }
+  .problem .btn { margin-top: 16px; align-self: flex-start; }
+  .pico { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; background: var(--surface-2); border: 1px solid var(--hairline-2); color: var(--ink); margin-bottom: 14px; }
+  .pico svg { width: 22px; height: 22px; }
+  .step-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .tag { font-size: 12px; font-weight: 600; padding: 4px 9px; border-radius: 999px; white-space: nowrap; border: 1px solid var(--hairline-2); background: var(--surface-2); color: var(--ink-2); }
+  .tag.live-now { color: var(--ink); border-color: color-mix(in srgb, var(--good) 45%, transparent); background: color-mix(in srgb, var(--good) 14%, transparent); }
+  .tag.live-now::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--good-text); margin-right: 6px; transform: translateY(-1px); }
+  .tag.soon { color: var(--ink); border-color: color-mix(in srgb, var(--warning) 45%, transparent); background: color-mix(in srgb, var(--warning) 12%, transparent); }
+  .tag.soon::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--warning); margin-right: 6px; transform: translateY(-1px); }
+  .example { margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: center; padding: 26px; }
+  @media (max-width: 860px) { .example { grid-template-columns: 1fr; gap: 18px; padding: 20px; } }
+  .example h3 { font-size: clamp(20px, 2.4vw, 24px); letter-spacing: -.02em; margin: 12px 0 8px; }
+  .example p { margin: 0; color: var(--ink-2); }
+  .example b { color: var(--ink); }
+  .stack.big { height: 22px; margin-top: 0; }
+
   /* footer */
   footer { margin-top: 72px; border-top: 1px solid var(--hairline); padding: 36px 0 48px; color: var(--muted); font-size: 14px; }
   .foot { display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
@@ -350,10 +373,11 @@
       Solvent
     </a>
     <nav class="links" id="navLinks" aria-label="Sections">
-      <a href="#how">How it works</a>
+      <a href="#how">What it does</a>
       <a href="#books">Live books</a>
       <a href="#ranking">Ranking</a>
       <a href="#check">Check an agent</a>
+      <a href="#who">Who it's for</a>
       <a href="https://github.com/Datwebguy/solventagent#readme" target="_blank" rel="noopener">Developers ↗</a>
     </nav>
     <div class="nav-actions">
@@ -404,39 +428,87 @@
     </section>
   </div>
 
+  <section class="wrap section" id="problem" aria-labelledby="problemTitle">
+    <div class="section-head">
+      <div>
+        <h2 id="problemTitle">The problem</h2>
+        <p>Thousands of AI agents now have their own tokens. Every trade earns them money. But:</p>
+      </div>
+    </div>
+    <div class="problems">
+      <div class="card problem">
+        <div class="pico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 7H6a4 4 0 0 0 0 8h3M15 7h3a4 4 0 0 1 0 8h-3"/><path d="M4 21L20 3"/></svg></div>
+        <h3>Income and costs never meet</h3>
+        <p>An agent's earnings land in one wallet, while its AI bill is paid separately by its creator. It earns money but can't spend it on staying alive.</p>
+      </div>
+      <div class="card problem">
+        <div class="pico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/><path d="M11 8v3M11 14v.01"/></svg></div>
+        <h3>No one can tell who's really profitable</h3>
+        <p>Any agent can claim it makes money. There's no proof of what it earns compared with what it spends.</p>
+      </div>
+      <div class="card problem">
+        <div class="pico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7l6 6 4-4 8 8"/><path d="M21 11v6h-6"/></svg></div>
+        <h3>AI agents are bad with money</h3>
+        <p>Real experiments with AI-run shops, like Anthropic's Project Vend, lost money when the agents had no firm rules.</p>
+      </div>
+    </div>
+  </section>
+
   <section class="wrap section" id="how" aria-labelledby="howTitle">
     <div class="section-head">
       <div>
-        <h2 id="howTitle">How Solvent works</h2>
-        <p>Four steps that run on their own, with proof at every step.</p>
+        <h2 id="howTitle">What Solvent does</h2>
+        <p>Solvent is the finance department for an AI agent. Here it is running its own agent, with what's live today.</p>
       </div>
     </div>
     <ol class="steps">
       <li class="card step">
-        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="9" r="6"/><path d="M18.1 10.4a6 6 0 1 1-7.7 7.7"/></svg></div>
-        <h3>It earns</h3>
-        <p>Every trade of its token pays Solvent a small fee. It also sells written reports.</p>
+        <div class="step-top"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="9" r="6"/><path d="M18.1 10.4a6 6 0 1 1-7.7 7.7"/></svg></div><span class="tag soon">Starts at token launch</span></div>
+        <h3>Earnings come in</h3>
+        <p>Every trade of its token pays it a fee, straight into its own wallet. It also sells written reports.</p>
         <div class="live" id="liveEarn">—</div>
       </li>
       <li class="card step">
-        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9v9z"/><path d="M12 3a9 9 0 0 1 9 9h-9z"/></svg></div>
-        <h3>It budgets</h3>
-        <p>A public rulebook splits every dollar before anything is spent.</p>
+        <div class="step-top"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9v9z"/><path d="M12 3a9 9 0 0 1 9 9h-9z"/></svg></div><span class="tag live-now">Live now</span></div>
+        <h3>A budget it can't break</h3>
+        <p>A public rulebook splits every dollar, with hard spending limits. The rules are published on Solana.</p>
         <div class="live" id="liveBudget">—</div>
       </li>
       <li class="card step">
-        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 4.6L18 9.5l-4.2 1.9L12 16l-1.8-4.6L6 9.5l4.2-1.9z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg></div>
-        <h3>It thinks</h3>
-        <p>It pays for its own AI, and switches to cheaper AI when money runs low.</p>
+        <div class="step-top"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 4.6L18 9.5l-4.2 1.9L12 16l-1.8-4.6L6 9.5l4.2-1.9z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg></div><span class="tag live-now">Live now</span></div>
+        <h3>It pays for its own AI</h3>
+        <p>Every answer is paid from its own budget. When money runs low it switches to cheaper AI, and when it runs out it pauses.</p>
         <div class="live" id="liveThink">—</div>
       </li>
       <li class="card step">
-        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg></div>
-        <h3>It proves</h3>
-        <p>Every payment is recorded, and your browser checks that nothing was changed.</p>
+        <div class="step-top"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg></div><span class="tag live-now">Live now</span></div>
+        <h3>Public proof</h3>
+        <p>Every payment is recorded, and your browser checks that nothing was changed. Snapshots are saved to Solana once it runs around the clock.</p>
         <div class="live" id="liveProve">—</div>
       </li>
     </ol>
+
+    <div class="card example">
+      <div class="example-copy">
+        <span class="eyebrow">Example</span>
+        <h3>An agent whose token earns <b>$50 a day</b></h3>
+        <p>Solvent splits it automatically. Anyone can open its page and see <b>SOLVENT, 30 days of thinking left</b>, with proof behind every number. If trading dries up, the page says so: <b>AT RISK</b>, and it switches to cheaper AI.</p>
+      </div>
+      <div class="example-split">
+        <div class="stack big" role="img" aria-label="$25 thinking budget, $10 $ANSEM savings, $10 everyday cash, $5 buying back its token">
+          <span style="width:50%;background:var(--s1)" data-tip-title="$25 · Thinking budget" data-tip="About 1,500 answers from a top AI model" tabindex="0"></span>
+          <span style="width:20%;background:var(--s2)" data-tip-title="$10 · $ANSEM savings" tabindex="0"></span>
+          <span style="width:20%;background:var(--s3)" data-tip-title="$10 · Everyday cash" tabindex="0"></span>
+          <span style="width:10%;background:var(--s4)" data-tip-title="$5 · Buying back its token" tabindex="0"></span>
+        </div>
+        <ul class="legend">
+          <li><span class="sw" style="background:var(--s1)"></span><span class="name">Thinking budget</span><span class="pct">$25</span><span class="desc">About 1,500 answers from a top AI model</span></li>
+          <li><span class="sw" style="background:var(--s2)"></span><span class="name">$ANSEM savings</span><span class="pct">$10</span></li>
+          <li><span class="sw" style="background:var(--s3)"></span><span class="name">Everyday cash</span><span class="pct">$10</span></li>
+          <li><span class="sw" style="background:var(--s4)"></span><span class="name">Buying back its token</span><span class="pct">$5</span></li>
+        </ul>
+      </div>
+    </div>
   </section>
 
   <section class="wrap section" id="books" aria-labelledby="booksTitle">
@@ -563,6 +635,35 @@
       <div id="checkOut" aria-live="polite"></div>
     </div>
   </section>
+
+  <section class="wrap section" id="who" aria-labelledby="whoTitle">
+    <div class="section-head">
+      <div>
+        <h2 id="whoTitle">Who it's for</h2>
+        <p>Solvent is built to run any agent's money, not just its own.</p>
+      </div>
+    </div>
+    <div class="problems">
+      <div class="card problem">
+        <div class="pico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18v3h3l6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></svg></div>
+        <h3>Agent builders</h3>
+        <p>Your agent becomes a business that pays its own bills, instead of a cost you fund by hand. Its token earnings cover its AI, under a public budget.</p>
+        <a class="btn btn-ghost btn-sm" href="https://github.com/Datwebguy/solventagent#readme" target="_blank" rel="noopener">Set it up for your agent ↗</a>
+      </div>
+      <div class="card problem">
+        <div class="pico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg></div>
+        <h3>Token holders and traders</h3>
+        <p>See which agents actually make money before you buy, from public records instead of claims.</p>
+        <a class="btn btn-ghost btn-sm" href="#ranking">See the ranking</a>
+      </div>
+      <div class="card problem">
+        <div class="pico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 4v4M9 13v.01M15 13v.01M9 17h6"/></svg></div>
+        <h3>Other AI agents</h3>
+        <p>Agents can buy Solvent's reports on their own, paying per report with no account and no human involved.</p>
+        <a class="btn btn-ghost btn-sm" href="#check">Try a check</a>
+      </div>
+    </div>
+  </section>
 </main>
 
 <footer>
@@ -683,7 +784,7 @@ const navMap = new Map([...document.querySelectorAll('#navLinks a[href^="#"]')].
 const sectionObserver = new IntersectionObserver((list) => {
   for (const en of list) if (en.isIntersecting) navMap.forEach((a, id) => a.setAttribute("aria-current", String(id === en.target.id)));
 }, { rootMargin: "-45% 0px -50% 0px" });
-["how", "books", "ranking", "check"].forEach((id) => sectionObserver.observe($(id)));
+["how", "books", "ranking", "check", "who"].forEach((id) => sectionObserver.observe($(id)));
 
 // ---------- wallet (Phantom); the wallet library loads only when needed ----------
 let wallet = null;
@@ -888,7 +989,7 @@ async function loadBooks() {
     : "These rules will be published on Solana soon.";
 
   // how it works: live numbers
-  $("liveEarn").innerHTML = `${ICON.check}<span>${esc(money(b.incomeUsd))} earned so far</span>`;
+  $("liveEarn").innerHTML = `${ICON.check}<span>${esc(money(b.incomeUsd))} earned so far, from reports</span>`;
   $("liveBudget").innerHTML = snap.policyCommitTx ? `${ICON.check}<span>Rules published · <a href="${txUrl(snap.policyCommitTx)}" target="_blank" rel="noopener">proof ↗</a></span>` : "Rules coming soon";
   $("liveThink").innerHTML = b.thoughts ? `${ICON.check}<span>About ${esc(money(b.spentOnThinkingUsd / b.thoughts))} per answer</span>` : "No answers yet";
 
