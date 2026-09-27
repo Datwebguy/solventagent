@@ -24,9 +24,24 @@ export interface SolvencyIndex {
 
 /** Clawrena leaderboard rows from clawpump.tech/analytics: rank, name, ticker, mint, fees earned (SOL). */
 export async function fetchLeaderboard(): Promise<Omit<IndexEntry, "payoutWallet" | "audit">[]> {
+  // ClawPump's analytics page reads this public feed; it lists every Clawrena project.
+  try {
+    const res = await fetch("https://clawpump.tech/api/ansemhack/fees", { headers: { accept: "application/json" } });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const j = (await res.json()) as { projects?: { mint: string; symbol?: string; projectName?: string; grossFeesSol?: number }[] };
+    const rows = (j.projects ?? [])
+      .filter((p) => p.mint && Number(p.grossFeesSol) > 0)
+      .sort((a, b) => Number(b.grossFeesSol) - Number(a.grossFeesSol))
+      .map((p, i) => ({ rank: i + 1, name: p.projectName || p.symbol || p.mint, mint: p.mint, ticker: p.symbol ?? "", clawpumpFeesSol: Number(p.grossFeesSol) }));
+    if (rows.length) return rows;
+  } catch {
+    // fall back to reading the page
+  }
   const md = await (await fetch(reader("https://clawpump.tech/analytics"), { headers: { "X-Return-Format": "markdown" } })).text();
   const rows: Omit<IndexEntry, "payoutWallet" | "audit">[] = [];
-  const re = /^\| #(\d+) \| \[([^\]]+)\]\(https:\/\/clawpump\.tech\/tokens\/([A-Za-z0-9]+)\)\$?([A-Z0-9]*) \| ([\d,.]+) SOL/gm;
+  // Current table: | 1 | [Name](https://clawpump.tech/tokens/<mint> "Name") $TICKER | 1,498.024 SOL $186.4K | ...
+  // Older table:   | #1 | [Name](https://clawpump.tech/tokens/<mint>)$TICKER | 1,498.024 SOL | ...
+  const re = /^\| #?(\d+) \| \[([^\]]+)\]\(https:\/\/clawpump\.tech\/tokens\/([A-Za-z0-9]+)(?: "[^"]*")?\) ?\$?([A-Z0-9]*) \| ([\d,.]+) SOL/gm;
   for (const m of md.matchAll(re)) {
     rows.push({ rank: Number(m[1]), name: m[2]!, mint: m[3]!, ticker: m[4] ?? "", clawpumpFeesSol: Number(m[5]!.replace(/,/g, "")) });
   }

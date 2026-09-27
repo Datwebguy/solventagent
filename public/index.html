@@ -754,6 +754,12 @@ $("giveBtn").onclick = async () => {
 
 // ---------- ranking ----------
 let ranking = [];
+// Whether an agent pays for its own AI from the wallet its earnings land in.
+function aiTag(a) {
+  if (a.status === "SOLVENT") return `<span class="ai-tag good">Earnings cover its AI${a.coverage ? ` · ${a.coverage >= 100 ? "100+" : a.coverage.toFixed(1)}×` : ""}</span>`;
+  if (a.status === "AT RISK") return `<span class="ai-tag warning">Pays more for AI than it earns</span>`;
+  return "";
+}
 async function loadRanking() {
   try {
     const r = await fetch("/api/solvency-index", { cache: "no-store" });
@@ -767,6 +773,7 @@ async function loadRanking() {
       <div class="name" title="${esc(e.name)}"><a href="/agent/${esc(e.payoutWallet)}" style="color:inherit">${esc(e.name)}</a>${e.ticker ? ` <span class="ticker">$${esc(e.ticker)}</span>` : ""}</div>
       <div class="big">${esc(money(e.audit.feeIncome.avgPerDayUsd))}<small> a day</small></div>
       <div class="sub">${esc(money(e.audit.feeIncome.last7dUsd))} in the last 7 days</div>
+      ${aiTag(e.audit)}
       <a class="btn btn-ghost btn-sm" href="/agent/${esc(e.payoutWallet)}">See its books →</a>
     </div>`).join("");
     const rest = ranking.slice(3);
@@ -774,12 +781,13 @@ async function loadRanking() {
       const v = e.audit.feeIncome.avgPerDayUsd;
       return `<div class="rrow" onclick="if (window.innerWidth <= 640 && !event.target.closest('a,button')) location.href='/agent/${esc(e.payoutWallet)}'" style="cursor:pointer" data-tip-title="${esc(e.name)}" data-tip="Earns ${esc(money(v))} a day, ${esc(money(e.audit.feeIncome.last7dUsd))} in the last 7 days">
         <span class="rk">${i + 4}</span>
-        <div class="nm"><a href="/agent/${esc(e.payoutWallet)}">${esc(e.name)}</a>${e.ticker ? `<span class="ticker">$${esc(e.ticker)}</span>` : ""}<div class="bar" style="width:${Math.max(0.6, (v / max) * 100)}%"></div></div>
+        <div class="nm"><a href="/agent/${esc(e.payoutWallet)}">${esc(e.name)}</a>${e.ticker ? `<span class="ticker">$${esc(e.ticker)}</span>` : ""}${aiTag(e.audit)}<div class="bar" style="width:${Math.max(0.6, (v / max) * 100)}%"></div></div>
         <div class="v"><b>${esc(money(v))}</b><span>a day</span></div>
         <div class="go"><button class="btn btn-ghost btn-sm" type="button" data-check="${esc(e.payoutWallet)}" data-name="${esc(e.name)}">Check</button></div>
       </div>`;
     }).join("") : `<div class="muted" style="padding:14px 0">Only the top three have earnings so far.</div>`;
-    $("rankNote").textContent = `Updated ${ago(idx.generatedAt)}. Earnings per day are based on the last 7 days. If several agents share one wallet, their earnings are shown together.`;
+    const paying = ranking.filter((e) => e.audit.aiSpend?.payments > 0).length;
+    $("rankNote").textContent = `Updated ${ago(idx.generatedAt)}. Earnings per day are based on the last 7 days. ${paying ? `${paying} of ${ranking.length} pay for their AI from the wallet they earn in.` : "None of them pay for their AI from the wallet they earn in yet."} If several agents share one wallet, their earnings are shown together.`;
     $("quick").innerHTML = `<span>Try:</span>` + ranking.slice(0, 3).map((e) => `<button type="button" data-check="${esc(e.payoutWallet)}" data-name="${esc(e.name)}">${esc(e.name)}</button>`).join("");
   } catch {
     $("rankList").innerHTML = `<div class="muted" style="padding:14px 0">The ranking is being updated. Please check back soon.</div>`;

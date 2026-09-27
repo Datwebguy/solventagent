@@ -230,7 +230,7 @@ const commands: Record<string, () => Promise<void>> = {
     console.log({ bookedSales: booked, ...urls });
   },
 
-  /** Builds the Clawrena Solvency Index from the chain, publishing after every project: index:build [limit] */
+  /** Builds the Clawrena Solvency Index from the chain and publishes it once complete: index:build [limit] */
   async "index:build"() {
     const canPublish = env.SOLVENT_PUBLISH && env.BLOB_READ_WRITE_TOKEN;
     const save = async (index: SolvencyIndex) => {
@@ -243,7 +243,10 @@ const commands: Record<string, () => Promise<void>> = {
         token: env.BLOB_READ_WRITE_TOKEN,
       });
     };
-    const index = await buildSolvencyIndex(Number(positional[0] ?? 25), (s) => console.log(s), canPublish ? save : undefined);
+    // Publish only the finished ranking, so the live one never shrinks while a rebuild runs.
+    const index = await buildSolvencyIndex(Number(positional[0] ?? 25), (s) => console.log(s));
+    if (canPublish && index.entries.length === 0) throw new Error("the rebuilt ranking is empty; keeping the published one");
+    if (canPublish) await save(index);
     console.log(canPublish ? `published ${index.entries.length} entries` : JSON.stringify(index, null, 2));
   },
 
