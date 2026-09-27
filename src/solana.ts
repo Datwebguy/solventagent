@@ -7,6 +7,7 @@ import {
   sendAndConfirmTransaction,
   type Keypair,
 } from "@solana/web3.js";
+import { getAssociatedTokenAddressSync, TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { env, MINTS } from "./config.js";
 
 export const MEMO_PROGRAM_ID = new PublicKey("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr");
@@ -51,12 +52,18 @@ export async function getParsedTx(sig: string, conn: Connection = readConnection
 }
 
 /**
- * Balance of a token in UI units, summed over every account the owner holds for that mint.
- * Works for classic SPL and Token-2022 mints (pump.fun tokens such as $ANSEM are Token-2022).
+ * Balance of a token in UI units, read from the owner's standard token account under both the
+ * classic and Token-2022 programs (pump.fun tokens such as $ANSEM are Token-2022). Uses plain
+ * account reads, which free RPC endpoints allow from any server.
  */
 export async function tokenBalance(owner: PublicKey, mint: string): Promise<number> {
-  const res = await withRetry(() => readConnection().getParsedTokenAccountsByOwner(owner, { mint: new PublicKey(mint) }));
-  return res.value.reduce((sum, a) => sum + Number(a.account.data.parsed?.info?.tokenAmount?.uiAmountString ?? 0), 0);
+  const mintKey = new PublicKey(mint);
+  const atas = [TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID].map((program) => getAssociatedTokenAddressSync(mintKey, owner, true, program));
+  const infos = await withRetry(() => readConnection().getMultipleParsedAccounts(atas));
+  return infos.value.reduce((sum, acc) => {
+    const data = acc?.data as { parsed?: { info?: { tokenAmount?: { uiAmountString?: string } } } } | undefined;
+    return sum + Number(data?.parsed?.info?.tokenAmount?.uiAmountString ?? 0);
+  }, 0);
 }
 
 export async function solBalance(owner: PublicKey): Promise<number> {
