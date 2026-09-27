@@ -43,8 +43,7 @@ export async function recentSignatures(owner: PublicKey, limit: number) {
   const first = await withRetry(() => readConnection().getSignaturesForAddress(owner, { limit }));
   if (first.length >= limit) return first;
   try {
-    const fallback = new Connection("https://api.mainnet-beta.solana.com", { commitment: "confirmed", disableRetryOnRateLimit: true });
-    const second = await withRetry(() => fallback.getSignaturesForAddress(owner, { limit }), 4);
+    const second = await withRetry(() => fallbackConnection().getSignaturesForAddress(owner, { limit }), 4);
     return second.length > first.length ? second : first;
   } catch {
     return first;
@@ -56,16 +55,23 @@ export async function recentSignatures(owner: PublicKey, limit: number) {
  * Returns null instead of throwing when a transaction cannot be read, so one odd
  * transaction never breaks a whole scan.
  */
+let publicFallback: Connection | undefined;
+const fallbackConnection = () =>
+  (publicFallback ??= new Connection("https://api.mainnet-beta.solana.com", { commitment: "confirmed", disableRetryOnRateLimit: true }));
+
 export async function getParsedTx(sig: string, conn: Connection = readConnection()): Promise<ParsedTransactionWithMeta | null> {
-  try {
-    return await withRetry(() =>
-      conn.getParsedTransaction(sig, { maxSupportedTransactionVersion: 1 as 0, commitment: "confirmed" }),
-    );
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    if (/version|not supported|parse/i.test(msg)) return null;
-    throw err;
-  }
+  const read = async (c: Connection) => {
+    try {
+      return await withRetry(() => c.getParsedTransaction(sig, { maxSupportedTransactionVersion: 1 as 0, commitment: "confirmed" }));
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (/version|not supported|parse/i.test(msg)) return null;
+      throw err;
+    }
+  };
+  // Some free endpoints only keep recent history for servers; older transactions come back
+  // empty, so ask Solana's public endpoint before giving up.
+  return (await read(conn)) ?? (await read(fallbackConnection()).catch(() => null));
 }
 
 /**
