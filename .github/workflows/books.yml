@@ -1,0 +1,34 @@
+# Keeps Solvent's public books up to date every hour: books new income, AI spending and
+# paid reports, then publishes them for the website. It never sends a transaction and does
+# not have the wallet's private key.
+name: Keep the books
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: books
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  keep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npx tsx src/keeper.ts
+        env:
+          SOLVENT_PUBLISH: "1"
+          SOLVENT_TREASURY_ADDRESS: ${{ vars.SOLVENT_TREASURY_ADDRESS }}
+          USEPOD_API_TOKEN: ${{ secrets.USEPOD_API_TOKEN }}
+          BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}

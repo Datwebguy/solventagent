@@ -7,6 +7,7 @@ import { jupQuote, jupSwap } from "./jupiter.js";
 import { FileLedger, burnUsdPerDay } from "./ledger.js";
 import { Policy } from "./policy.js";
 import { usdPrice } from "./prices.js";
+import { PublicKey } from "@solana/web3.js";
 import { sendMemo, solBalance, solscanTx } from "./solana.js";
 import { BUCKET, EMPTY_PENDING, needsAnchor, planCycle, type Pending, type Plan } from "./treasurer.js";
 import { tokenBalanceMicros } from "./usepod/client.js";
@@ -18,16 +19,18 @@ export const FEE_BUFFER_SOL = 0.02;
 const MIN_ACTION_USD = 0.5;
 const RESERVE_FLOOR_USD = 1;
 
-interface State {
+export interface State {
   cursor?: string;
   pending: Pending;
   lastRunAt?: string;
   anchoredSeq?: number;
+  /** Last UsePod reserve balance the bookkeeper saw, in microdollars. */
+  reserveMicros?: number;
 }
 
 const statePath = () => join(env.SOLVENT_DATA_DIR, "treasurer.json");
 
-function readState(): State {
+export function readState(): State {
   try {
     return JSON.parse(readFileSync(statePath(), "utf8")) as State;
   } catch {
@@ -35,7 +38,7 @@ function readState(): State {
   }
 }
 
-function writeState(s: State) {
+export function writeState(s: State) {
   mkdirSync(env.SOLVENT_DATA_DIR, { recursive: true });
   writeFileSync(statePath(), JSON.stringify(s, null, 2));
 }
@@ -56,12 +59,24 @@ export interface CycleReport {
 /**
  * One treasury cycle: book new income, split it by the published policy, and (with
  * `execute`) top up the compute reserve, buy the $ANSEM reserve, run buybacks, and anchor
- * the ledger head on-chain. Without `execute` it only reads and plans.
+ * the ledger head on-chain. Without `execute` it only reads and plans; with `bookOnly` it also
+ * books the income and carries every planned action forward as pending, sending nothing.
+ * Only `execute` needs the private key; otherwise SOLVENT_TREASURY_ADDRESS is enough.
  */
-export async function runCycle({ execute, log = console.log }: { execute: boolean; log?: (s: string) => void }): Promise<CycleReport> {
-  const kp = loadTreasury();
+export async function runCycle({
+  execute,
+  bookOnly = false,
+  log = console.log,
+}: {
+  execute: boolean;
+  bookOnly?: boolean;
+  log?: (s: string) => void;
+}): Promise<CycleReport> {
+  if (execute && bookOnly) throw new Error("choose execute or bookOnly, not both");
+  const kp = execute || !env.SOLVENT_TREASURY_ADDRESS ? loadTreasury() : undefined;
+  const owner = kp?.publicKey ?? new PublicKey(env.SOLVENT_TREASURY_ADDRESS!);
   const policy = loadPolicy();
-  if (policy.agent.wallet !== kp.publicKey.toBase58()) {
+  if (policy.agent.wallet !== owner.toBase58()) {
     throw new Error("solvent.policy.json names a different wallet than the treasury key");
   }
   const ledger = new FileLedger();
@@ -72,18 +87,18 @@ export async function runCycle({ execute, log = console.log }: { execute: boolea
   let inflows: Awaited<ReturnType<typeof fetchInflows>>["inflows"] = [];
   let cursor = state.cursor;
   if (state.cursor) {
-    const r = await fetchInflows(kp.publicKey, sources, state.cursor);
+    const r = await fetchInflows(owner, sources, state.cursor);
     inflows = r.inflows;
     cursor = r.newest;
   } else {
-    cursor = await latestSignature(kp.publicKey);
+    cursor = await latestSignature(owner);
     log("First cycle: the income cursor starts now. Earlier wallet history is not counted as income.");
   }
 
   const toUsd = (lamports: number) => (lamports / 1e9) * solPrice;
   const incomeUsd = inflows.filter((f) => f.source !== "deposit").reduce((s, f) => s + toUsd(f.lamports), 0);
   const reserveUsd = env.USEPOD_API_TOKEN ? (await tokenBalanceMicros(env.USEPOD_API_TOKEN)) / 1e6 : 0;
-  const sol = await solBalance(kp.publicKey);
+  const sol = await solBalance(owner);
   const plan = planCycle({
     incomeUsd,
     reserveUsd,
@@ -102,7 +117,7 @@ export async function runCycle({ execute, log = console.log }: { execute: boolea
   if (plan.actions.length === 0) log("  plan: nothing to execute this cycle");
 
   const report: CycleReport = { executed: execute, incomeUsd, reserveUsd, plan, txs: [], failures: [] };
-  if (!execute) return report;
+  if (!execute && !bookOnly) return report;
 
   for (const f of inflows) {
     const usd = toUsd(f.lamports);
@@ -115,19 +130,26 @@ export async function runCycle({ execute, log = console.log }: { execute: boolea
   }
 
   const pending: Pending = { ...plan.pendingAfter };
+  if (bookOnly) {
+    // Nothing is sent: planned moves stay pending until the owner turns on autopilot.
+    for (const a of plan.actions) pending[BUCKET[a.kind]] += a.usd;
+    writeState({ ...state, cursor, pending, lastRunAt: new Date().toISOString() });
+    return report;
+  }
+  const signer = kp!;
   for (const a of plan.actions) {
     const lamports = BigInt(Math.floor((a.usd / solPrice) * 1e9));
     try {
       if (a.kind === "compute_topup") {
         if (!env.USEPOD_DEPOSIT_CODE) throw new Error("USEPOD_DEPOSIT_CODE is not set");
-        const r = await depositSol(kp, env.USEPOD_DEPOSIT_CODE, lamports);
+        const r = await depositSol(signer, env.USEPOD_DEPOSIT_CODE, lamports);
         ledger.append({ kind: "compute_topup", usd: 0, txSig: r.signature, meta: { amountUsd: a.usd, from: "SOL", usdcMinOut: r.usdcMinOut } });
         report.txs.push({ kind: a.kind, signature: r.signature });
       } else {
         const mint = a.kind === "ansem_buy" ? MINTS.ANSEM : env.SOLVENT_TOKEN_MINT!;
         reserveSpend(a.usd);
         const quote = await jupQuote(MINTS.SOL, mint, lamports);
-        const sig = await jupSwap(kp, quote);
+        const sig = await jupSwap(signer, quote);
         ledger.append({
           kind: a.kind === "ansem_buy" ? "swap" : "buyback",
           usd: a.kind === "buyback" ? -a.usd : 0,
@@ -149,7 +171,7 @@ export async function runCycle({ execute, log = console.log }: { execute: boolea
   const head = ledger.head();
   if (head && needsAnchor(head, anchoredSeq)) {
     try {
-      const sig = await sendMemo(kp, `solvent:ledger:${head.seq}:${head.hash}`);
+      const sig = await sendMemo(signer, `solvent:ledger:${head.seq}:${head.hash}`);
       const anchor = ledger.append({ kind: "anchor", usd: 0, txSig: sig, meta: { seq: head.seq, hash: head.hash } });
       anchoredSeq = anchor.seq;
       report.txs.push({ kind: "anchor", signature: sig });
@@ -159,6 +181,6 @@ export async function runCycle({ execute, log = console.log }: { execute: boolea
     }
   }
 
-  writeState({ cursor, pending, lastRunAt: new Date().toISOString(), anchoredSeq });
+  writeState({ ...state, cursor, pending, lastRunAt: new Date().toISOString(), anchoredSeq });
   return report;
 }

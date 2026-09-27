@@ -77,6 +77,19 @@ Paid report flow (x402, USDC on Solana):
 
 The payment is verified on-chain, and each payment settles exactly one report. Buy one from the CLI with `npm run cli audit:buy <wallet> --base https://<site> --yes`.
 
+## Hourly bookkeeping (GitHub Actions)
+
+`.github/workflows/books.yml` runs `src/keeper.ts` every hour (and on demand from the Actions tab). Each run loads the published ledger and the treasurer's state from Vercel Blob, checks the ledger's hash chain, books paid-audit sales, AI spending and new token income, publishes the books, and saves the state back.
+
+It never signs or sends a transaction and has no private key. Planned moves (AI top-ups, $ANSEM buys, buybacks) stay pending in the state until autopilot is turned on in a runtime that holds the key.
+
+Repository settings it needs:
+
+- Secrets: `USEPOD_API_TOKEN` (reads the AI budget), `BLOB_READ_WRITE_TOKEN` (publishes)
+- Variable: `SOLVENT_TREASURY_ADDRESS`
+
+Run only one publisher at a time: while the workflow is on, don't also publish from `npm run cli` or the local server.
+
 ## Docker
 
 ```bash
