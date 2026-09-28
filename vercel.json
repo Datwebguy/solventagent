@@ -18,6 +18,10 @@
     {
       "source": "/agent/:wallet",
       "destination": "/agent.html"
+    },
+    {
+      "source": "/join",
+      "destination": "/join.html"
     }
   ]
 }
