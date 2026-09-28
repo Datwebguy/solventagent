@@ -39,7 +39,7 @@ Demo, in this order, all on the live site:
   - First paid report sold end to end.
   - First $ANSEM-funded thinking.
   - Budget rules published on-chain.
-  - A ranking of 19 AnsemHack agents built from public records.
+  - A ranking of the top 40 AnsemHack agents, built from public records and refreshed twice a day.
   - Add token numbers once $SOLVENT is live.
 
 ## 4. Token, roadmap, vision (3 min)
@@ -57,7 +57,7 @@ Demo, in this order, all on the live site:
 ## Before going live: checklist
 
 - [ ] $SOLVENT launched on ClawPump, with its payout wallet set to Solvent's treasury.
-- [ ] Solvent running (so the books are fresh), and the ranking updated that day.
+- [ ] Books fresh (the site says "Live"), and the ranking refreshed by hand from the Actions tab that morning.
 - [ ] Phantom holds a little $ANSEM and about $0.10 USDC for the two live demos.
 - [ ] Browser tab already open on the site; zoom at 110% so numbers are readable on stream.
 - [ ] Backup: if Phantom stalls, show the earlier $ANSEM payment and report sale in "Every payment".

@@ -1,6 +1,6 @@
-# Keeps Solvent's public books up to date every hour: books new income, AI spending and
-# paid reports, then publishes them for the website. It never sends a transaction and does
-# not have the wallet's private key.
+# Backup for Solvent's hourly bookkeeping. The main timer calls the website's /api/keep; this
+# runs the same pass in case that timer misses. A shared lock stops the two from overlapping.
+# It never sends a transaction and does not have the wallet's private key.
 name: Keep the books
 
 on:
