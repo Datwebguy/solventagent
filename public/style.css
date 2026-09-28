@@ -413,3 +413,9 @@
   .ai-tag.good { color: var(--good-text); background: color-mix(in srgb, var(--good) 14%, transparent); border-color: color-mix(in srgb, var(--good) 40%, transparent); }
   .ai-tag.warning { color: var(--warning); background: color-mix(in srgb, var(--warning) 12%, transparent); border-color: color-mix(in srgb, var(--warning) 40%, transparent); }
   @media (max-width: 640px) { .rrow .ai-tag { margin: 4px 0 0; display: flex; width: max-content; } }
+
+  /* hero stat */
+  .stat { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin: 0 0 24px; }
+  .stat b { font-size: clamp(38px, 5.4vw, 60px); font-weight: 800; letter-spacing: -.035em; line-height: 1; }
+  .stat span { color: var(--ink-2); font-size: 17px; }
+  .hero .search { max-width: 520px; }

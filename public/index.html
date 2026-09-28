@@ -29,8 +29,8 @@
       Solvent
     </a>
     <nav class="links" id="navLinks" aria-label="Sections">
-      <a href="#books">Live books</a>
       <a href="#ranking">Ranking</a>
+      <a href="#books">Live books</a>
       <a href="#check">Check an agent</a>
       <a href="https://github.com/Datwebguy/solventagent#readme" target="_blank" rel="noopener">Developers ↗</a>
     </nav>
@@ -49,11 +49,12 @@
       <div>
         <span class="eyebrow"><span class="live-dot" aria-hidden="true"></span>Live on Solana</span>
         <h1 id="heroTitle">The AI agent that <span class="accent">pays its own bills.</span></h1>
-        <div class="cta-row">
-          <a class="btn btn-primary" href="#check" data-focus="checkInput">Check any agent</a>
-          <a class="btn btn-ghost" href="#check" data-focus="checkInput">Get a report · $0.05</a>
-          <a class="btn btn-ghost" href="https://github.com/Datwebguy/solventagent#quick-start" target="_blank" rel="noopener">Use it for your agent ↗</a>
-        </div>
+        <div class="stat"><b class="skel" id="statNum">0 of 22</b><span>other earning agents were seen paying their own AI bill</span></div>
+        <form class="search" id="heroForm">
+          <label class="sr-only" for="heroInput">Agent wallet address</label>
+          <input id="heroInput" placeholder="Paste any agent's wallet" autocomplete="off" spellcheck="false" />
+          <button class="btn btn-primary" type="submit">Check it</button>
+        </form>
       </div>
 
       <aside class="card health" aria-labelledby="healthTitle">
@@ -76,6 +77,17 @@
       </aside>
     </section>
   </div>
+
+  <section class="wrap section" id="ranking" aria-labelledby="rankTitle">
+    <div class="section-head">
+      <div>
+        <h2 id="rankTitle">Who's actually making money</h2>
+      </div>
+    </div>
+    <div class="podium" id="podium"></div>
+    <div class="card rank-list" id="rankList"><div class="muted" style="padding:14px 0">Loading the ranking…</div></div>
+    <p class="footnote" id="rankNote"></p>
+  </section>
 
   <section class="wrap section" id="books" aria-labelledby="booksTitle">
     <div class="section-head">
@@ -162,17 +174,6 @@
         <div class="out" id="giveOut" aria-live="polite"></div>
       </div>
     </div>
-  </section>
-
-  <section class="wrap section" id="ranking" aria-labelledby="rankTitle">
-    <div class="section-head">
-      <div>
-        <h2 id="rankTitle">Who's actually making money</h2>
-      </div>
-    </div>
-    <div class="podium" id="podium"></div>
-    <div class="card rank-list" id="rankList"><div class="muted" style="padding:14px 0">Loading the ranking…</div></div>
-    <p class="footnote" id="rankNote"></p>
   </section>
 
   <section class="wrap section" id="check" aria-labelledby="checkTitle">
@@ -474,8 +475,8 @@ async function loadBooks() {
   const ageMin = (Date.now() - Date.parse(snap.generatedAt)) / 60000;
   $("fresh").classList.toggle("stale", ageMin > 75);
   $("freshText").textContent = ageMin > 75 ? `Last updated ${ago(snap.generatedAt)}` : `Live · updated ${ago(snap.generatedAt)}`;
-  $("runwayFig").textContent = daysText(b.runwayDays);
-  $("runwaySub").textContent = b.runwayDays == null ? "No AI costs in the last 24 hours" : "of thinking already paid for";
+  $("runwayFig").textContent = b.runwayDays == null ? money(b.reserveUsd) : daysText(b.runwayDays);
+  $("runwaySub").textContent = "of thinking already paid for";
   const frac = b.runwayDays == null ? 1 : Math.min(1, b.runwayDays / target);
   $("meterFill").style.width = `${Math.max(2, frac * 100)}%`;
   $("meterFill").style.background = st.fill;
@@ -617,6 +618,7 @@ async function loadRanking() {
       </div>`;
     }).join("") : `<div class="muted" style="padding:14px 0">Only the top three have earnings so far.</div>`;
     const paying = ranking.filter((e) => e.audit.aiSpend?.payments > 0).length;
+    $("statNum").textContent = `${paying} of ${ranking.length}`; $("statNum").classList.remove("skel");
     $("rankNote").textContent = `Updated ${ago(idx.generatedAt)}.`;
     $("quick").innerHTML = `<span>Try:</span>` + ranking.slice(0, 3).map((e) => `<button type="button" data-check="${esc(e.payoutWallet)}" data-name="${esc(e.name)}">${esc(e.name)}</button>`).join("");
   } catch {
@@ -743,7 +745,7 @@ async function buyReport() {
 // ---------- start ----------
 const preset = new URLSearchParams(location.search).get("check");
 if (preset) { $("checkInput").value = preset; setTimeout(() => { $("check").scrollIntoView({ block: "start" }); runCheck(); }, 300); }
-document.querySelectorAll("[data-focus]").forEach((a) => a.addEventListener("click", () => setTimeout(() => $(a.dataset.focus).focus({ preventScroll: true }), 500)));
+$("heroForm").addEventListener("submit", (e) => { e.preventDefault(); const w = $("heroInput").value.trim(); if (!w) { $("heroInput").focus(); return; } $("checkInput").value = w; $("check").scrollIntoView({ behavior: "smooth" }); runCheck(); });
 renderWallet();
 loadBooks();
 loadRanking();
