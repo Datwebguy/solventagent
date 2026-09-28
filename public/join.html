@@ -47,6 +47,23 @@
   .faq details { background: var(--surface); border: 1px solid var(--hairline); border-radius: 14px; padding: 14px 18px; }
   .faq summary { cursor: pointer; font-weight: 600; list-style-position: outside; }
   .faq details p { margin: 10px 0 2px; color: var(--ink-2); font-size: 14.5px; }
+  .signup { display: grid; gap: 10px; }
+  .signup .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 640px) { .signup .row { grid-template-columns: 1fr; } }
+  .signup input { width: 100%; height: 52px; background: var(--page); border: 1px solid var(--hairline-2); border-radius: 12px; color: var(--ink); padding: 0 16px; font: 500 15px var(--sans); }
+  .signup input:focus { outline: none; border-color: var(--link); }
+  .signup label { font-size: 13px; color: var(--muted); display: block; margin: 0 0 4px 2px; }
+  .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+  .signup-msg { margin: 4px 2px 0; font-size: 14px; }
+  .signup-msg.ok { color: var(--good-text); }
+  .signup-msg.err { color: #ff8a8a; }
+  .joined { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  @media (max-width: 860px) { .joined { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 520px) { .joined { grid-template-columns: 1fr; } }
+  .joined li { background: var(--surface-2); border: 1px solid var(--hairline); border-radius: 12px; padding: 10px 12px; min-width: 0; }
+  .joined a.nm { font-weight: 600; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .joined .h { font-size: 13px; color: var(--muted); }
+  .count-pill { display: inline-flex; align-items: center; gap: 6px; background: var(--brand-soft); color: var(--brand); border-radius: 999px; padding: 3px 10px; font-weight: 700; font-size: 14px; vertical-align: middle; }
   .foot-space { height: 56px; }
 </style>
 </head>
@@ -134,6 +151,25 @@
         <button class="btn btn-primary" type="submit">Open my agent's page</button>
       </form>
       <p class="footnote">The page is read straight from Solana each time someone opens it. Nothing is saved and nothing is signed.</p>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <h3 class="card-title">Add your agent to the public list</h3>
+      <p class="card-sub">Optional. Your project shows up under "Agents on Solvent" with a link to its books. Only the name, X handle and wallet are shown, and the wallet must have activity on Solana.</p>
+      <form class="signup" id="signupForm" novalidate>
+        <div class="row">
+          <div><label for="suName">Project name</label><input id="suName" name="name" maxlength="40" placeholder="My Agent" autocomplete="off" required /></div>
+          <div><label for="suHandle">Project's X handle</label><input id="suHandle" name="handle" maxlength="16" placeholder="@myagent" autocomplete="off" autocapitalize="none" spellcheck="false" required /></div>
+        </div>
+        <div><label for="suWallet">Wallet that receives its token earnings</label><input id="suWallet" name="wallet" placeholder="Wallet address" autocomplete="off" spellcheck="false" required /></div>
+        <div class="hp" aria-hidden="true"><label for="suWeb">Leave this empty</label><input id="suWeb" name="website" tabindex="-1" autocomplete="off" /></div>
+        <button class="btn btn-primary" id="suBtn" type="submit">Add my agent</button>
+        <p class="signup-msg" id="suMsg" role="status" aria-live="polite"></p>
+      </form>
+    </div>
+    <div class="card" id="agents" style="margin-top:14px">
+      <h3 class="card-title">Agents on Solvent <span class="count-pill" id="joinedCount">…</span></h3>
+      <p class="card-sub" id="joinedSub">Loading…</p>
+      <ul class="joined" id="joinedList"></ul>
     </div>
   </section>
 
@@ -253,6 +289,40 @@ $("joinForm").addEventListener("submit", (e) => {
   if (/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(w)) location.href = `/agent/${w}`;
   else { $("joinInput").focus(); toast("That doesn't look like a Solana wallet address."); }
 });
+
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+async function loadJoined() {
+  try {
+    const r = await fetch("/api/agents", { cache: "no-store" });
+    const d = await r.json();
+    $("joinedCount").textContent = d.count;
+    $("joinedSub").textContent = d.count ? "Teams that added their agent. Tap one to see its books." : "Be the first to add your agent.";
+    $("joinedList").innerHTML = d.agents.map((a) => `<li><a class="nm" href="/agent/${esc(a.wallet)}">${esc(a.name)}</a><a class="h" href="https://x.com/${esc(a.handle)}" target="_blank" rel="noopener">@${esc(a.handle)}</a></li>`).join("");
+  } catch {
+    $("joinedCount").textContent = "0";
+    $("joinedSub").textContent = "The list couldn't be loaded. Please refresh.";
+  }
+}
+$("signupForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const f = e.target, msg = $("suMsg"), btn = $("suBtn");
+  msg.className = "signup-msg"; msg.textContent = "Checking your wallet on Solana…";
+  btn.disabled = true;
+  try {
+    const res = await fetch("/api/join", {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name: f.elements.name.value, handle: f.elements.handle.value, wallet: f.elements.wallet.value, website: f.elements.website.value }),
+    });
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(d.error || "Something went wrong. Please try again.");
+    msg.className = "signup-msg ok";
+    msg.innerHTML = d.already ? `That wallet is already on the list. <a href="/agent/${esc(d.wallet)}">See its books →</a>` : `You're on the list. <a href="/agent/${esc(d.wallet)}">See your books →</a>`;
+    f.reset(); loadJoined();
+  } catch (err) {
+    msg.className = "signup-msg err"; msg.textContent = err.message;
+  } finally { btn.disabled = false; }
+});
+loadJoined();
 </script>
 </body>
 </html>
