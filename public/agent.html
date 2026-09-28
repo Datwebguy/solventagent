@@ -281,7 +281,7 @@ async function load() {
     .filter(([v, u]) => v >= (u === "$ANSEM" ? 0.05 : 0.005)).map(([v, u, d]) => `${v.toFixed(d)} ${u}`).join(" · ") || "Nothing held";
   ["kEarn", "kSpend", "kAnswers", "kHolds"].forEach((id) => $(id).classList.remove("skel"));
   $("moneySub").textContent = a.scanned.from
-    ? `From its public activity between ${new Date(a.scanned.from).toLocaleDateString()} and ${new Date(a.scanned.to).toLocaleDateString()}.`
+    ? `From its public activity between ${new Date(a.scanned.from).toLocaleDateString()} and ${new Date(a.scanned.to).toLocaleDateString()}.${a.scanned.partial ? " Solana's free connection was slow, so this covers only its most recent activity." : ""}`
     : "No recent public activity found.";
 
   const max = Math.max(a.feeIncome.last7dUsd, a.aiSpend.last7dUsd);

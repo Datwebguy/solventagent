@@ -229,7 +229,7 @@
       </div>
       <details class="explain">
         <summary>How does this check work?</summary>
-        <p>Every record carries a fingerprint of the record before it. Your browser recalculates all of them. If anyone had changed an old record, the fingerprints would stop matching and you would see a warning here. Snapshots are also saved to Solana, where they can't be edited.</p>
+        <p>Every record carries a fingerprint of the record before it. Your browser recalculates all of them. If anyone had changed an old record, the fingerprints would stop matching and you would see a warning here. The budget rules are published on Solana, and snapshots of these records will be saved there too once Solvent runs around the clock.</p>
       </details>
       <ol class="feed" id="feed"></ol>
       <div class="more-row"><button class="btn btn-ghost btn-sm" id="moreBtn" type="button" hidden>Show all payments</button></div>
@@ -364,7 +364,7 @@
         <svg class="brand-mark" width="24" height="24" viewBox="4 4 56 56" aria-hidden="true"><path fill="#3ddc97" d="M60 8.5H21.5a14 14 0 0 0 0 28h21a5 5 0 0 1 0 10H13L4 55.5h38.5a14 14 0 0 0 0-28h-21a5 5 0 0 1 0-10H51z"/></svg>
         Solvent
       </a>
-      <p>Every number here comes from public blockchain records, or from Solvent's own records, which are saved to Solana so they can't be quietly changed. Solvent never stores what it is asked.</p>
+      <p>Every number here comes from public blockchain records, or from Solvent's own records, which are chained together so any change shows up, with its budget rules published on Solana. Solvent never stores what it is asked.</p>
     </div>
     <nav aria-label="Footer">
       <a href="https://github.com/Datwebguy/solventagent#readme" target="_blank" rel="noopener">For developers</a>
@@ -836,7 +836,7 @@ async function runCheck(name) {
         <div class="tile"><div class="label">Profit (7 days)</div><div class="value">${a.aiSpend.payments ? esc(money(a.profit7dUsd, { sign: true })) : "—"}</div><div class="sub">earned minus paid for AI</div></div>
         <div class="tile"><div class="label">What it holds</div><div class="value">${esc(money(a.balances.usd))}</div><div class="sub">${esc(a.balances.sol.toFixed(2))} SOL · ${esc(a.balances.ansem.toFixed(1))} $ANSEM</div></div>
       </div>
-      <p class="footnote">Based on its latest public activity${a.scanned.from ? `, ${esc(new Date(a.scanned.from).toLocaleDateString())} to ${esc(new Date(a.scanned.to).toLocaleDateString())}` : ""}. <a href="${accUrl(w)}" target="_blank" rel="noopener">View wallet ↗</a></p>
+      <p class="footnote">Based on its latest public activity${a.scanned.from ? `, ${esc(new Date(a.scanned.from).toLocaleDateString())} to ${esc(new Date(a.scanned.to).toLocaleDateString())}` : ""}. ${a.scanned.partial ? "Solana's free connection was slow, so this covers only its most recent activity. " : ""}<a href="${accUrl(w)}" target="_blank" rel="noopener">View wallet ↗</a></p>
       <div class="cta-row" style="margin-top:12px"><a class="btn btn-ghost btn-sm" href="/agent/${encodeURIComponent(w)}">Open its public page →</a></div>
       <div class="report-cta">
         <div><b>Want the full picture?</b><span>A short written report on this agent's finances. Solvent pays for the AI that writes it.</span></div>
