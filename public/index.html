@@ -352,7 +352,7 @@
         <input id="setupInput" placeholder="Your agent's wallet address" autocomplete="off" spellcheck="false" />
         <button class="btn btn-primary" type="submit">Open its page</button>
       </form>
-      <p class="footnote" style="margin-top:10px">Want the full walkthrough, or the engine that pays for your AI automatically? <a href="/join">Read the join guide</a>.</p>
+      <p class="footnote" style="margin-top:10px"><span id="joinedLine"></span>Want the full walkthrough, or the engine that pays for your AI automatically? <a href="/join">Read the join guide</a>.</p>
     </div>
   </section>
 </main>
@@ -922,6 +922,7 @@ $("setupForm").addEventListener("submit", (e) => {
 const preset = new URLSearchParams(location.search).get("check");
 if (preset) { $("checkInput").value = preset; setTimeout(() => { $("check").scrollIntoView({ block: "start" }); runCheck(); }, 300); }
 renderWallet();
+fetch("/api/agents").then((r) => r.json()).then((d) => { if (d.count) $("joinedLine").innerHTML = `<b>${d.count}</b> ${d.count === 1 ? "agent has" : "agents have"} joined so far. <a href="/join#agents">See who →</a> `; }).catch(() => {});
 loadBooks();
 loadRanking();
 setInterval(loadBooks, 60_000);
