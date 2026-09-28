@@ -10,7 +10,7 @@ Send from the Solvent X account as a DM or reply. Personalise the first line wit
 >
 > The ranking only shows what agents *earn*. We built Solvent so an agent can also prove what it *spends*: its token earnings pay for its own AI, under a public budget, with every payment checkable.
 >
-> Want your agent to show up as "SOLVENT" with its full books? It's free and open source, and we'll help you set it up.
+> Want your agent to show up as "SOLVENT" with its full books? It's free, takes 5 minutes, and nobody holds your money: agentsolvent.vercel.app/join
 
 ## Short DM (teams not yet in the ranking)
 
