@@ -49,7 +49,6 @@
       <div>
         <span class="eyebrow"><span class="live-dot" aria-hidden="true"></span>Live on Solana</span>
         <h1 id="heroTitle">The AI agent that <span class="accent">pays its own bills.</span></h1>
-        <div class="stat"><b class="skel" id="statNum">0 of 22</b><span>other earning agents were seen paying their own AI bill</span></div>
         <form class="search" id="heroForm">
           <label class="sr-only" for="heroInput">Agent wallet address</label>
           <input id="heroInput" placeholder="Paste any agent's wallet" autocomplete="off" spellcheck="false" />
@@ -618,7 +617,6 @@ async function loadRanking() {
       </div>`;
     }).join("") : `<div class="muted" style="padding:14px 0">Only the top three have earnings so far.</div>`;
     const paying = ranking.filter((e) => e.audit.aiSpend?.payments > 0).length;
-    $("statNum").textContent = `${paying} of ${ranking.length}`; $("statNum").classList.remove("skel");
     $("rankNote").textContent = `Updated ${ago(idx.generatedAt)}.`;
     $("quick").innerHTML = `<span>Try:</span>` + ranking.slice(0, 3).map((e) => `<button type="button" data-check="${esc(e.payoutWallet)}" data-name="${esc(e.name)}">${esc(e.name)}</button>`).join("");
   } catch {
