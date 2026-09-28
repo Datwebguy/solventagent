@@ -8,6 +8,12 @@
       "maxDuration": 60
     }
   },
+  "crons": [
+    {
+      "path": "/api/keep",
+      "schedule": "7 12 * * *"
+    }
+  ],
   "rewrites": [
     {
       "source": "/agent/:wallet",

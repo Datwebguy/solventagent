@@ -1,10 +1,11 @@
-# Rebuilds the Clawrena earnings ranking from public blockchain records once a day and
+# Rebuilds the Clawrena earnings ranking from public blockchain records twice a day and
 # publishes it for the website. Read-only: it never sends a transaction.
 name: Refresh the ranking
 
 on:
   schedule:
-    - cron: "41 5 * * *"
+    # Twice a day: GitHub sometimes skips a scheduled run when it is busy.
+    - cron: "23 3,15 * * *"
   workflow_dispatch:
 
 concurrency:

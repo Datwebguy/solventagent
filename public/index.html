@@ -635,9 +635,10 @@ async function loadBooks() {
   $("statusChip").className = `status-chip ${st.cls}`;
   $("statusIcon").innerHTML = st.icon;
   $("statusText").textContent = st.word;
+  // The books are updated hourly, so anything under 75 minutes is on schedule.
   const ageMin = (Date.now() - Date.parse(snap.generatedAt)) / 60000;
-  $("fresh").classList.toggle("stale", ageMin > 30);
-  $("freshText").textContent = ageMin > 30 ? `Last updated ${ago(snap.generatedAt)}` : `Live · updated ${ago(snap.generatedAt)}`;
+  $("fresh").classList.toggle("stale", ageMin > 75);
+  $("freshText").textContent = ageMin > 75 ? `Last updated ${ago(snap.generatedAt)}` : `Live · updated ${ago(snap.generatedAt)}`;
   $("runwayFig").textContent = daysText(b.runwayDays);
   $("runwaySub").textContent = b.runwayDays == null ? "No AI costs in the last 24 hours" : "of thinking already paid for";
   const frac = b.runwayDays == null ? 1 : Math.min(1, b.runwayDays / target);

@@ -77,18 +77,24 @@ Paid report flow (x402, USDC on Solana):
 
 The payment is verified on-chain, and each payment settles exactly one report. Buy one from the CLI with `npm run cli audit:buy <wallet> --base https://<site> --yes`.
 
-## Hourly bookkeeping (GitHub Actions)
+## Hourly bookkeeping
 
-`.github/workflows/books.yml` runs `src/keeper.ts` every hour (and on demand from the Actions tab). Each run loads the published ledger and the treasurer's state from Vercel Blob, checks the ledger's hash chain, books paid-audit sales, AI spending and new token income, publishes the books, and saves the state back.
+`src/keep.ts` does one bookkeeping pass: it loads the published ledger and the treasurer's state from Vercel Blob, checks the ledger's hash chain, books paid-audit sales, AI spending and new token income, publishes the books, and saves the state back. It never signs or sends a transaction and has no private key. Planned moves (AI top-ups, $ANSEM buys, buybacks) stay pending in the state until autopilot is turned on in a runtime that holds the key.
 
-It never signs or sends a transaction and has no private key. Planned moves (AI top-ups, $ANSEM buys, buybacks) stay pending in the state until autopilot is turned on in a runtime that holds the key.
+Three things run it, and a lock in Blob (`solvent/state/lock.json`) makes sure only one pass runs at a time:
 
-Repository settings it needs:
+1. **Main: an outside timer, hourly.** Any cron service (for example cron-job.org) sends `GET https://<site>/api/keep` with the header `Authorization: Bearer <CRON_SECRET>`. The pass takes about 10 seconds.
+2. **Vercel Cron, daily** (`vercel.json`). Vercel sends the same header by itself.
+3. **Backup: GitHub Actions, hourly** (`.github/workflows/books.yml`, also runnable from the Actions tab). GitHub often runs scheduled jobs late or skips them, so it isn't the main timer.
 
-- Secrets: `USEPOD_API_TOKEN` (reads the AI budget), `BLOB_READ_WRITE_TOKEN` (publishes)
-- Variable: `SOLVENT_TREASURY_ADDRESS`
+Settings:
 
-Run only one publisher at a time: while the workflow is on, don't also publish from `npm run cli` or the local server.
+- Vercel project: `CRON_SECRET` (24+ random characters), plus the `USEPOD_API_TOKEN`, `BLOB_READ_WRITE_TOKEN` and `SOLVENT_TREASURY_ADDRESS` the paid reports already use.
+- GitHub repository: secrets `USEPOD_API_TOKEN` and `BLOB_READ_WRITE_TOKEN`, variable `SOLVENT_TREASURY_ADDRESS`.
+
+While these run, don't also publish from `npm run cli` or the local server: those don't take the lock.
+
+The Clawrena ranking takes about 25 minutes to build, too long for a Vercel function, so it runs on GitHub Actions twice a day (`.github/workflows/ranking.yml`). Before a demo, start it by hand from the Actions tab. The site shows when it was last updated.
 
 ## Docker
 
@@ -109,6 +115,5 @@ npx tsx scripts/smoke.ts    # read-only checks against Jupiter, UsePod and a rea
 
 - **Free RPC endpoints.** Audits and the Solvency Index read the chain through free endpoints, so they are rate-limited and slow (about a minute per project in the index). Set `SOLANA_READ_RPC_URLS` (for example a Helius URL) to speed them up.
 - **Audits sample recent history.** Audits read a wallet's last 40–60 transactions. The index measures income per payout wallet, so a wallet shared by several agents shows their combined income.
-- **Books need the runtime.** The public books only refresh while `src/server.ts` is running with `SOLVENT_PUBLISH=1`.
 - **One writer at a time.** Run the CLI's spending commands through the server when it is up (`think` does this automatically).
 - **Upstream advisories.** `npm audit` reports advisories in dependencies of `@solana/web3.js` 1.x and `@coral-xyz/anchor` (`bigint-buffer`, `uuid`, `toml`). None of the flagged functions are called with untrusted input here; fixing them requires major upgrades of those libraries.
