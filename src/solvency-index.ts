@@ -22,9 +22,9 @@ export interface SolvencyIndex {
   entries: IndexEntry[];
 }
 
-/** Clawrena leaderboard rows from clawpump.tech/analytics: rank, name, ticker, mint, fees earned (SOL). */
+/** ClawPump leaderboard rows from clawpump.tech/analytics: rank, name, ticker, mint, fees earned (SOL). */
 export async function fetchLeaderboard(): Promise<Omit<IndexEntry, "payoutWallet" | "audit">[]> {
-  // ClawPump's analytics page reads this public feed; it lists every Clawrena project.
+  // ClawPump's analytics page reads this public feed; it lists every project on the leaderboard.
   try {
     const res = await fetch("https://clawpump.tech/api/ansemhack/fees", { headers: { accept: "application/json" } });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);

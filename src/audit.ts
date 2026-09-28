@@ -18,7 +18,7 @@ export interface AuditEvent {
 
 export interface Audit {
   address: string;
-  scanned: { transactions: number; from: string | null; to: string | null };
+  scanned: { transactions: number; from: string | null; to: string | null; partial?: boolean };
   feeIncome: {
     payouts: number;
     sol: number;
@@ -45,6 +45,23 @@ export interface Audit {
   events: AuditEvent[];
 }
 
+/** Time kept back at the end of a budgeted audit for reading balances. */
+const BALANCES_MS = 9_000;
+
+/** Resolves with the promise's value, or null if it takes longer than `ms`. */
+async function within<T>(ms: number, p: Promise<T>): Promise<T | null> {
+  if (ms <= 0) return null;
+  if (!Number.isFinite(ms)) return p; // no budget set (a timer of Infinity would fire at once)
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const late = new Promise<null>((resolve) => (timer = setTimeout(() => resolve(null), ms)));
+  try {
+    return await Promise.race([p, late]);
+  } finally {
+    clearTimeout(timer);
+    p.catch(() => {}); // a read abandoned at the deadline must not become an unhandled rejection
+  }
+}
+
 /** Rough cost of a ~1K-token thought per tier, from UsePod quotes on 2026-09-26. */
 const THOUGHT_COST_USD: Record<string, number> = { thriving: 0.0165, steady: 0.0055, frugal: 0.0003 };
 
@@ -67,7 +84,15 @@ function perDay(items: { usd: number; t: number }[], now: number): number {
  * Public audit of any agent wallet, from public records only: token earnings (ClawPump fee
  * payouts), money sent to UsePod for AI, profit, holdings, and what the income can pay for.
  */
-export async function auditWallet(address: string, maxTransactions = 150, now = Date.now()): Promise<Audit> {
+export async function auditWallet(
+  address: string,
+  maxTransactions = 150,
+  now = Date.now(),
+  opts: { budgetMs?: number } = {},
+): Promise<Audit> {
+  // With a time budget (web requests have a hard limit), stop reading transactions in time to
+  // still read balances, and return what was read, marked partial, instead of timing out.
+  const readUntil = opts.budgetMs ? Date.now() + opts.budgetMs - BALANCES_MS : Infinity;
   const owner = new PublicKey(address);
   const [sigsRaw, prices] = await Promise.all([
     recentSignatures(owner, maxTransactions),
@@ -79,10 +104,17 @@ export async function auditWallet(address: string, maxTransactions = 150, now = 
 
   const earned: { usd: number; t: number; sig: string; lamports: number }[] = [];
   const spent: { usd: number; t: number; sig: string; kind: "topup" | "per_answer" }[] = [];
+  let read = 0;
+  let partial = false;
   // Free RPCs reject batched getTransaction calls, so fetch individually, 3 at a time.
   for (let i = 0; i < sigs.length; i += 3) {
     const batch = sigs.slice(i, i + 3);
-    const txs = await Promise.all(batch.map((s) => getParsedTx(s.signature)));
+    const txs = await within(readUntil - Date.now(), Promise.all(batch.map((s) => getParsedTx(s.signature))));
+    if (!txs) {
+      partial = true;
+      break;
+    }
+    read = i + batch.length;
     txs.forEach((tx, j) => {
       if (!tx) return;
       const sig = batch[j]!.signature;
@@ -99,13 +131,18 @@ export async function auditWallet(address: string, maxTransactions = 150, now = 
   const earned7d = sum(earned.filter((x) => x.t >= weekAgo));
   const spent7d = sum(spent.filter((x) => x.t >= weekAgo));
   const earnPerDay = perDay(earned, now);
-  const times = sigs.map((s) => s.blockTime ?? 0).filter(Boolean);
+  const times = sigs.slice(0, read).map((s) => s.blockTime ?? 0).filter(Boolean);
   const [walletSol, usdc, ansem] = await Promise.all([solBalance(owner), tokenBalance(owner, MINTS.USDC), tokenBalance(owner, MINTS.ANSEM)]);
   const iso = (t: number) => (t ? new Date(t * 1000).toISOString() : null);
 
   return {
     address,
-    scanned: { transactions: sigs.length, from: times.length ? iso(Math.min(...times)) : null, to: times.length ? iso(Math.max(...times)) : null },
+    scanned: {
+      transactions: read,
+      from: times.length ? iso(Math.min(...times)) : null,
+      to: times.length ? iso(Math.max(...times)) : null,
+      ...(partial ? { partial: true } : {}),
+    },
     feeIncome: {
       payouts: earned.length,
       sol: earned.reduce((s, x) => s + x.lamports, 0) / 1e9,

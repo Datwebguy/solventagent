@@ -230,7 +230,7 @@ const commands: Record<string, () => Promise<void>> = {
     console.log({ bookedSales: booked, ...urls });
   },
 
-  /** Builds the Clawrena Solvency Index from the chain and publishes it once complete: index:build [limit] */
+  /** Builds the Solvency Index from the chain and publishes it once complete: index:build [limit] */
   async "index:build"() {
     const canPublish = env.SOLVENT_PUBLISH && env.BLOB_READ_WRITE_TOKEN;
     const save = async (index: SolvencyIndex) => {

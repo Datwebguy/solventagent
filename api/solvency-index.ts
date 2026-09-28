@@ -1,6 +1,6 @@
 import { head } from "@vercel/blob";
 
-/** The Clawrena Solvency Index, rebuilt from the chain by the runtime. */
+/** The Solvency Index, rebuilt from the chain by the runtime. */
 export async function GET(): Promise<Response> {
   try {
     const blob = await head("solvent/index.json");

@@ -1,4 +1,4 @@
-# Rebuilds the Clawrena earnings ranking from public blockchain records twice a day and
+# Rebuilds the earnings ranking from public blockchain records twice a day and
 # publishes it for the website. Read-only: it never sends a transaction.
 name: Refresh the ranking
 

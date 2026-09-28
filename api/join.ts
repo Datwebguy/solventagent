@@ -38,12 +38,18 @@ export async function POST(request: Request): Promise<Response> {
     }
 
     const record: JoinedAgent = { wallet, name, handle, joinedAt: new Date().toISOString() };
-    await put(pathname, JSON.stringify(record), {
-      access: "public",
-      addRandomSuffix: false,
-      allowOverwrite: false,
-      contentType: "application/json",
-    });
+    try {
+      await put(pathname, JSON.stringify(record), {
+        access: "public",
+        addRandomSuffix: false,
+        allowOverwrite: false,
+        contentType: "application/json",
+      });
+    } catch (err) {
+      // Two sign-ups for one wallet at the same moment: the second finds the first already saved.
+      if (await head(pathname).catch(() => undefined)) return Response.json({ ok: true, already: true, wallet });
+      throw err;
+    }
     return Response.json({ ok: true, wallet });
   } catch (err) {
     console.error(err);
