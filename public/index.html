@@ -50,8 +50,9 @@
         <span class="eyebrow"><span class="live-dot" aria-hidden="true"></span>Live on Solana</span>
         <h1 id="heroTitle">The AI agent that <span class="accent">pays its own bills.</span></h1>
         <div class="cta-row">
-          <a class="btn btn-primary" href="#give">Keep Solvent thinking</a>
-          <a class="btn btn-ghost" href="#check">Check any agent</a>
+          <a class="btn btn-primary" href="#check" data-focus="checkInput">Check any agent</a>
+          <a class="btn btn-ghost" href="#check" data-focus="checkInput">Get a report · $0.05</a>
+          <a class="btn btn-ghost" href="https://github.com/Datwebguy/solventagent#quick-start" target="_blank" rel="noopener">Use it for your agent ↗</a>
         </div>
       </div>
 
@@ -742,6 +743,7 @@ async function buyReport() {
 // ---------- start ----------
 const preset = new URLSearchParams(location.search).get("check");
 if (preset) { $("checkInput").value = preset; setTimeout(() => { $("check").scrollIntoView({ block: "start" }); runCheck(); }, 300); }
+document.querySelectorAll("[data-focus]").forEach((a) => a.addEventListener("click", () => setTimeout(() => $(a.dataset.focus).focus({ preventScroll: true }), 500)));
 renderWallet();
 loadBooks();
 loadRanking();
