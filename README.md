@@ -67,7 +67,9 @@ MCP tools: `solvent_books`, `solvent_ledger`, `solvent_policy`, `solvent_plan_cy
 
 ## Public site (Vercel)
 
-`public/index.html` plus `api/` (books, ledger, audit, report). The runtime publishes `solvent/books.json` and `solvent/ledger.jsonl` to Vercel Blob (`BLOB_READ_WRITE_TOKEN`). Paid reports need `USEPOD_API_TOKEN`, `SOLVENT_TREASURY_ADDRESS` and `SOLVENT_QUOTE_SECRET` set on the project.
+`public/index.html` plus `api/` (books, ledger, audit, report, keep). The runtime publishes `solvent/books.json` and `solvent/ledger.jsonl` to Vercel Blob (`BLOB_READ_WRITE_TOKEN`). Paid reports need `USEPOD_API_TOKEN`, `SOLVENT_TREASURY_ADDRESS` and `SOLVENT_QUOTE_SECRET` set on the project.
+
+Vercel builds from GitHub: every merge into `main` goes live on its own, and every other branch gets a preview link.
 
 Paid report flow (x402, USDC on Solana):
 
