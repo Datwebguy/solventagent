@@ -292,8 +292,9 @@ async function load() {
   }
   $("addr").textContent = wallet;
   $("walletLink").href = `https://solscan.io/account/${wallet}`;
-  const [auditRes, idxRes, booksRes, sealsRes] = await Promise.allSettled([
-    fetch(`/api/audit?wallet=${encodeURIComponent(wallet)}`).then((r) => (r.ok ? r.json() : Promise.reject(r))),
+  // The live check reads the chain and can take a while; everything else comes from saved files.
+  const auditP = fetch(`/api/audit?wallet=${encodeURIComponent(wallet)}`).then((r) => (r.ok ? r.json() : Promise.reject(r)));
+  const [idxRes, booksRes, sealsRes] = await Promise.allSettled([
     fetch("/api/solvency-index").then((r) => (r.ok ? r.json() : null)),
     fetch("/api/books").then((r) => (r.ok ? r.json() : null)),
     fetch("/api/seals").then((r) => (r.ok ? r.json() : null)),
@@ -304,16 +305,27 @@ async function load() {
   $("agentName").innerHTML = `${esc(name)}${/^[A-Z0-9]{2,12}$/.test(known?.ticker || "") ? ` <span class="ticker">$${esc(known.ticker)}</span>` : ""}`;
   document.title = `${name}: is it paying its own way? — Solvent`;
 
-  if (auditRes.status !== "fulfilled") {
-    $("lede").textContent = "We couldn't read this agent's records right now. Please try again in a minute.";
-    ["heroFig", "kEarn", "kSpend", "kHolds"].forEach((id) => $(id).classList.remove("skel"));
-    return;
-  }
-  const a = auditRes.value;
-  lastAudit = a;
   const px = booksRes.status === "fulfilled" ? booksRes.value?.prices?.ansem : 0;
   if (px > 0) document.querySelectorAll("#sealPanel .tier").forEach((b) => (b.lastElementChild.textContent = `${b.lastElementChild.textContent.split(" ")[0]} · ≈ ${count(Math.ceil((b.dataset.usd / px) * 100) / 100)} $ANSEM`));
-  renderSeal(sealsRes.status === "fulfilled" ? sealsRes.value?.seals?.[wallet] : null, a);
+  const sealRec = sealsRes.status === "fulfilled" ? sealsRes.value?.seals?.[wallet] : null;
+
+  // Agents in the ranking show their saved numbers straight away; the live check then updates them.
+  if (known?.audit) showAudit(known.audit, sealRec);
+  let a;
+  try { a = await auditP; }
+  catch {
+    if (!known?.audit) {
+      $("lede").textContent = "We couldn't read this agent's records right now. Please try again in a minute.";
+      ["heroFig", "kEarn", "kSpend", "kHolds"].forEach((id) => $(id).classList.remove("skel"));
+    }
+    return;
+  }
+  showAudit(a, sealRec);
+}
+
+function showAudit(a, sealRec) {
+  lastAudit = a;
+  renderSeal(sealRec, a);
   const st = STATUS[a.status] || STATUS["NO ACTIVITY"];
   $("statusChip").className = `status-chip ${st.cls}`;
   $("statusIcon").innerHTML = st.icon;
@@ -344,10 +356,12 @@ async function load() {
 
   $("kEarn").textContent = money(a.feeIncome.avgPerDayUsd);
   $("kSpend").textContent = a.aiSpend.payments ? money(a.aiSpend.avgPerDayUsd) : "None seen";
+  ["kEarn", "kSpend"].forEach((id) => $(id).classList.remove("skel"));
+  if (!a.balances) return; // saved ranking numbers: holdings and payments arrive with the live check
   $("kHolds").textContent = money(a.balances.usd);
   $("kHoldsSub").textContent = [[a.balances.sol, "SOL", 2], [a.balances.usdc, "USDC", 2], [a.balances.ansem, "$ANSEM", 1]]
     .filter(([v, u]) => v >= (u === "$ANSEM" ? 0.05 : 0.005)).map(([v, u, d]) => `${v.toFixed(d)} ${u}`).join(" · ") || "Nothing held";
-  ["kEarn", "kSpend", "kHolds"].forEach((id) => $(id).classList.remove("skel"));
+  $("kHolds").classList.remove("skel");
   $("moneySub").textContent = a.scanned.from
     ? `From its public activity between ${new Date(a.scanned.from).toLocaleDateString()} and ${new Date(a.scanned.to).toLocaleDateString()}.${a.scanned.partial ? " Solana's free connection was slow, so this covers only its most recent activity." : ""}`
     : "No recent public activity found.";

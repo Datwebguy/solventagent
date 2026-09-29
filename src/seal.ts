@@ -11,7 +11,7 @@ import {
 import { PublicKey, type ParsedInstruction, type ParsedTransactionWithMeta, Transaction } from "@solana/web3.js";
 import { MINTS } from "./config.js";
 import { usdPrice } from "./prices.js";
-import { connection, memoInstruction } from "./solana.js";
+import { connection, memoInstruction, tokenBalance } from "./solana.js";
 
 /**
  * The Solvent Seal: an agent's wallet burns $ANSEM to earn a seal that stays lit only while
@@ -148,11 +148,15 @@ export async function buildSealTransaction(payer: PublicKey, tier: TierName, tre
   const payerAta = getAssociatedTokenAddressSync(mint, payer, true, program);
   const treasuryAta = getAssociatedTokenAddressSync(mint, treasury, true, program);
 
-  const balance = await conn.getTokenAccountBalance(payerAta, "confirmed").catch(() => null);
-  const have = BigInt(balance?.value.amount ?? "0");
+  // Read the balance with a plain account read: some public RPCs refuse getTokenAccountBalance,
+  // and a refused read must never be mistaken for an empty wallet.
+  const held = await tokenBalance(payer, MINTS.ANSEM).catch(() => {
+    throw new Error("Couldn't read this wallet's $ANSEM balance right now. Please try again in a moment.");
+  });
+  const have = BigInt(Math.round(held * 10 ** DECIMALS));
   const needed = Number(total) / 10 ** DECIMALS;
   if (have < total) {
-    throw new Error(`The ${tier} seal costs ${needed} $ANSEM ($${usd}) and this wallet holds ${Number(have) / 10 ** DECIMALS}.`);
+    throw new Error(`The ${tier} seal costs ${needed} $ANSEM ($${usd}) and this wallet holds ${held}.`);
   }
 
   const { id, quote } = signSealQuote({ w: payer.toBase58(), t: tier, u: usd, a: total.toString() }, secret);

@@ -12,7 +12,7 @@ export async function GET(request: Request): Promise<Response> {
   try {
     // Bounded in count and in time (the function limit is 60s), so a slow free RPC gives a partial answer, not a 504.
     const audit = await auditWallet(wallet, 60, Date.now(), { budgetMs: 48_000 });
-    return Response.json(audit, { headers: { "cache-control": `public, s-maxage=${audit.scanned.partial ? 60 : 300}` } });
+    return Response.json(audit, { headers: { "cache-control": `public, s-maxage=${audit.scanned.partial ? 60 : 300}, stale-while-revalidate=86400` } });
   } catch (err) {
     return Response.json({ error: err instanceof Error ? err.message : String(err) }, { status: 502 });
   }
