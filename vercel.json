@@ -26,7 +26,7 @@
   ],
   "headers": [
     {
-      "source": "/api/(audit|books|ledger|solvency-index|seals)",
+      "source": "/api/(audit|token|books|ledger|solvency-index|seals)",
       "headers": [
         {
           "key": "Access-Control-Allow-Origin",
