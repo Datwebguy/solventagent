@@ -51,11 +51,9 @@
       Solvent
     </a>
     <nav class="links" id="navLinks" aria-label="Sections">
-      <a href="/#how">What it does</a>
       <a href="/#books">Live books</a>
       <a href="/#ranking">Ranking</a>
       <a href="/#check">Check an agent</a>
-      <a href="/#who">Who it's for</a>
     </nav>
     <div class="nav-actions">
       <a class="btn btn-ghost btn-sm" href="/#check">Check another agent</a>
@@ -71,22 +69,31 @@
     <a class="crumb" href="/#ranking">← All agents</a>
     <section class="agent-head" aria-labelledby="agentName">
       <div>
-        <span class="eyebrow"><span class="live-dot" aria-hidden="true"></span>Public books · from blockchain records</span>
         <h1 class="agent-name" id="agentName">Loading this agent…</h1>
         <div class="addr" id="addr"></div>
-        <p class="lede" style="margin-top:16px" id="lede">We're reading this agent's public records: what it earns from its token and what it spends on AI.</p>
+        <div id="sealRow"></div>
+        <p class="lede" style="margin-top:16px" id="lede"></p>
         <div class="head-actions">
           <button class="btn btn-primary" id="shareBtn" type="button">Copy link to this page</button>
           <a class="btn btn-ghost" id="walletLink" href="#" target="_blank" rel="noopener">View wallet ↗</a>
+          <button class="btn btn-ghost" id="sealBtn" type="button">Get the seal</button>
+        </div>
+        <div class="card seal-panel" id="sealPanel" hidden>
+          <div class="tiers" role="group" aria-label="Choose a seal">
+            <button class="tier bronze" type="button" data-tier="bronze" data-usd="0.3"><b>Bronze</b><span>$0.30</span></button>
+            <button class="tier silver" type="button" data-tier="silver" data-usd="2"><b>Silver</b><span>$2</span></button>
+            <button class="tier gold" type="button" data-tier="gold" data-usd="5"><b>Gold</b><span>$5</span></button>
+          </div>
+          <p class="footnote">80% is burned, 20% funds Solvent's AI. Paid by this agent's own wallet.</p>
+          <div class="out" id="sealOut" aria-live="polite"></div>
         </div>
       </div>
       <aside class="card health" aria-labelledby="healthTitle">
         <h2 class="sr-only" id="healthTitle">This agent's standing</h2>
         <div class="health-top">
           <span class="status-chip" id="statusChip"><span id="statusIcon"></span><span id="statusText">CHECKING</span></span>
-          <span class="fresh"><span class="pulse" aria-hidden="true"></span><span>Read just now</span></span>
         </div>
-        <div><span class="hero-fig skel" id="heroFig">12×</span></div>
+        <div><span class="hero-fig skel" id="heroFig">—</span></div>
         <div class="hero-sub" id="heroSub">&nbsp;</div>
         <p class="status-explain" id="statusExplain">&nbsp;</p>
         <div class="mini">
@@ -100,17 +107,15 @@
 
   <section class="wrap section" aria-labelledby="moneyTitle">
     <div class="section-head"><div><h2 id="moneyTitle">Its money</h2><p id="moneySub">From its recent public activity.</p></div></div>
-    <div class="kpis">
-      <div class="card tile"><div class="label">Earning per day</div><div class="value up skel" id="kEarn">$0.00</div><div class="sub">average over 7 days</div></div>
-      <div class="card tile"><div class="label">Paid for AI per day</div><div class="value skel" id="kSpend">$0.00</div><div class="sub">sent to its AI provider</div></div>
-      <div class="card tile"><div class="label">AI answers its earnings could buy</div><div class="value skel" id="kAnswers">0</div><div class="sub">a day, with a top AI model</div></div>
-      <div class="card tile"><div class="label">What it holds</div><div class="value skel" id="kHolds">$0.00</div><div class="sub" id="kHoldsSub">&nbsp;</div></div>
+    <div class="kpis three">
+      <div class="card tile"><div class="label">Earning per day</div><div class="value up skel" id="kEarn">—</div><div class="sub">average over 7 days</div></div>
+      <div class="card tile"><div class="label">Paid for AI per day</div><div class="value skel" id="kSpend">—</div><div class="sub">sent to its AI provider</div></div>
+      <div class="card tile"><div class="label">What it holds</div><div class="value skel" id="kHolds">—</div><div class="sub" id="kHoldsSub">&nbsp;</div></div>
     </div>
 
     <div class="split">
       <div class="card">
         <h3 class="card-title">Earned vs paid for AI</h3>
-        <p class="card-sub">Last 7 days.</p>
         <div class="compare" id="compare"></div>
       </div>
       <div class="card activity" style="margin-top:0">
@@ -121,21 +126,6 @@
     </div>
   </section>
 
-  <section class="wrap section" aria-labelledby="knowTitle">
-    <div class="section-head"><div><h2 id="knowTitle">How we know</h2><p>Nothing here is self-reported. Anyone can check every number.</p></div></div>
-    <div class="know">
-      <div class="card"><h3>Earnings</h3><p>Payments of its token's trading fees into this wallet, recorded on the Solana blockchain.</p></div>
-      <div class="card"><h3>Paid for AI</h3><p>Payments from this wallet to UsePod, the marketplace it buys its AI from, including money it adds to its AI budget in advance. Every one is on the blockchain too.</p></div>
-      <div class="card"><h3>The limit</h3><p>If an agent pays for its AI from a different wallet, or somewhere else, we can't see those costs.</p></div>
-    </div>
-    <div class="card cta-card" style="margin-top:14px">
-      <div>
-        <h3>Want your agent to show as SOLVENT?</h3>
-        <p>Pay for its AI through UsePod from the wallet that receives its token earnings. Its books then appear here automatically: no sign-up, no one else holding your money.</p>
-      </div>
-      <a class="btn btn-primary" href="/#setup">How to join, in 3 steps</a>
-    </div>
-  </section>
 </main>
 
 <footer>
@@ -145,7 +135,6 @@
         <svg class="brand-mark" width="24" height="24" viewBox="4 4 56 56" aria-hidden="true"><path fill="#3ddc97" d="M60 8.5H21.5a14 14 0 0 0 0 28h21a5 5 0 0 1 0 10H13L4 55.5h38.5a14 14 0 0 0 0-28h-21a5 5 0 0 1 0-10H51z"/></svg>
         Solvent
       </a>
-      <p>Solvent reads public blockchain records to show whether an AI agent pays its own way. It never holds anyone's money.</p>
     </div>
     <nav aria-label="Footer">
       <a href="/">Solvent's own books</a>
@@ -156,6 +145,8 @@
 </footer>
 <div class="toasts" id="toasts" aria-live="polite"></div>
 
+<script src="/wallet-icons.js"></script>
+<script src="/wallet.js"></script>
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -166,7 +157,6 @@ function money(v, { sign = false } = {}) {
   const a = Math.abs(v);
   let s;
   if (a === 0) s = "$0";
-  else if (a >= 100) s = "$" + a.toLocaleString("en-US", { maximumFractionDigits: 0 });
   else if (a >= 0.01) s = "$" + a.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   else if (a >= 0.00001) s = "$" + Number(a.toPrecision(2)).toString();
   else s = "under $0.00001";
@@ -205,6 +195,74 @@ const STATUS = {
 const wallet = decodeURIComponent(location.pathname.split("/").filter(Boolean)[1] || "");
 const valid = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(wallet);
 
+// ---------- the seal ----------
+const RPC = "https://solana-rpc.publicnode.com";
+let connected = null;
+let web3Promise;
+function loadWeb3() {
+  return (web3Promise ??= new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = "https://cdn.jsdelivr.net/npm/@solana/web3.js@1.98.4/lib/index.iife.min.js";
+    s.onload = () => resolve(window.solanaWeb3);
+    s.onerror = () => { web3Promise = undefined; reject(new Error("Couldn't load the wallet tools. Check your connection and try again.")); };
+    document.head.appendChild(s);
+  }));
+}
+function friendly(err) {
+  const m = String(err?.message || err || "");
+  if (err?.closed) return "No wallet connected. Nothing was sent.";
+  if (err?.code === 4001 || /reject|cancel|denied|declined/i.test(m)) return "You cancelled in your wallet. Nothing was sent.";
+  if (/insufficient|debit/i.test(m)) return "Your wallet doesn't have enough funds for this.";
+  return m || "Something went wrong. Please try again.";
+}
+const TIER_NAME = { bronze: "Bronze", silver: "Silver", gold: "Gold" };
+// A seal is lit while the agent is earning and not paying more for AI than it earns.
+const sealLit = (a) => !!a && a.status !== "AT RISK" && a.status !== "NO ACTIVITY" && a.feeIncome.last7dUsd > 0;
+function renderSeal(record, audit) {
+  const row = $("sealRow");
+  if (!record) { row.innerHTML = ""; return; }
+  row.innerHTML = sealLit(audit)
+    ? `<span class="seal ${esc(record.tier)}" title="Burned $ANSEM to earn this seal. It stays lit while the agent keeps earning.">${esc(TIER_NAME[record.tier] || "")} seal</span>`
+    : `<span class="seal off" title="The agent has stopped earning, so its seal is switched off.">Seal off</span>`;
+}
+$("sealBtn").onclick = () => { $("sealPanel").hidden = !$("sealPanel").hidden; };
+async function buySeal(tier) {
+  const out = $("sealOut");
+  const buttons = [...document.querySelectorAll("#sealPanel .tier")];
+  buttons.forEach((b) => (b.disabled = true));
+  out.textContent = "";
+  try {
+    connected = connected ?? (await SolWallet.pick());
+    if (connected.address !== wallet) {
+      const name = connected.name;
+      try { await connected.disconnect(); } catch {}
+      connected = null;
+      throw new Error(`Connect this agent's own wallet (${wallet.slice(0, 4)}…${wallet.slice(-4)}) in ${name}. Only that wallet can get its seal.`);
+    }
+    out.textContent = "Approve in your wallet…";
+    const [r, web3] = await Promise.all([fetch(`/api/seal?wallet=${encodeURIComponent(wallet)}&tier=${tier}`, { method: "POST" }), loadWeb3()]);
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || "Couldn't prepare the transaction. Please try again.");
+    out.textContent = `Approve in your wallet: ${count(j.ansem)} $ANSEM ($${j.usd}), locked for 10 minutes.`;
+    const tx = web3.Transaction.from(Uint8Array.from(atob(j.transaction), (ch) => ch.charCodeAt(0)));
+    const conn = new web3.Connection(RPC, "confirmed");
+    const signature = await connected.signAndSend(tx, web3, conn);
+    out.textContent = "Confirming on Solana…";
+    await conn.confirmTransaction(signature, "confirmed");
+    const c = await fetch("/api/seal-confirm", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ wallet, signature }) });
+    const cj = await c.json();
+    if (!c.ok) throw new Error((cj.error || "We couldn't confirm the payment.") + ` Your transaction: ${txUrl(signature)}`);
+    out.innerHTML = `<span class="ok">Sealed. ${esc(count(j.burn))} $ANSEM burned.</span> <a href="${txUrl(signature)}" target="_blank" rel="noopener">View proof ↗</a>`;
+    toast("Seal earned.");
+    renderSeal({ tier: cj.tier }, lastAudit);
+    $("sealPanel").hidden = false;
+  } catch (e) {
+    out.innerHTML = `<span class="err">${esc(friendly(e))}</span>`;
+  } finally { buttons.forEach((b) => (b.disabled = false)); }
+}
+let lastAudit = null;
+document.querySelectorAll("#sealPanel .tier").forEach((b) => (b.onclick = () => buySeal(b.dataset.tier)));
+
 $("shareBtn").onclick = async () => {
   try { await navigator.clipboard.writeText(location.href); toast("Link copied. Share it anywhere."); }
   catch { toast(location.href); }
@@ -220,28 +278,33 @@ async function load() {
   if (!valid) {
     $("agentName").textContent = "That doesn't look like a wallet address";
     $("lede").innerHTML = `Go back and <a href="/#check">check an agent</a> by pasting its wallet address.`;
-    ["heroFig", "kEarn", "kSpend", "kAnswers", "kHolds"].forEach((id) => $(id).classList.remove("skel"));
+    ["heroFig", "kEarn", "kSpend", "kHolds"].forEach((id) => $(id).classList.remove("skel"));
     return;
   }
   $("addr").textContent = wallet;
   $("walletLink").href = `https://solscan.io/account/${wallet}`;
-  const [auditRes, idxRes, booksRes] = await Promise.allSettled([
+  const [auditRes, idxRes, booksRes, sealsRes] = await Promise.allSettled([
     fetch(`/api/audit?wallet=${encodeURIComponent(wallet)}`).then((r) => (r.ok ? r.json() : Promise.reject(r))),
     fetch("/api/solvency-index").then((r) => (r.ok ? r.json() : null)),
     fetch("/api/books").then((r) => (r.ok ? r.json() : null)),
+    fetch("/api/seals").then((r) => (r.ok ? r.json() : null)),
   ]);
   const known = idxRes.status === "fulfilled" && idxRes.value ? idxRes.value.entries.find((e) => e.payoutWallet === wallet) : null;
   const isSolvent = booksRes.status === "fulfilled" && booksRes.value?.agent?.wallet === wallet;
   const name = isSolvent ? "Solvent" : known ? known.name : `Agent ${wallet.slice(0, 4)}…${wallet.slice(-4)}`;
-  $("agentName").innerHTML = `${esc(name)}${known?.ticker ? ` <span class="ticker">$${esc(known.ticker)}</span>` : ""}`;
+  $("agentName").innerHTML = `${esc(name)}${/^[A-Z0-9]{2,12}$/.test(known?.ticker || "") ? ` <span class="ticker">$${esc(known.ticker)}</span>` : ""}`;
   document.title = `${name}: is it paying its own way? — Solvent`;
 
   if (auditRes.status !== "fulfilled") {
     $("lede").textContent = "We couldn't read this agent's records right now. Please try again in a minute.";
-    ["heroFig", "kEarn", "kSpend", "kAnswers", "kHolds"].forEach((id) => $(id).classList.remove("skel"));
+    ["heroFig", "kEarn", "kSpend", "kHolds"].forEach((id) => $(id).classList.remove("skel"));
     return;
   }
   const a = auditRes.value;
+  lastAudit = a;
+  const px = booksRes.status === "fulfilled" ? booksRes.value?.prices?.ansem : 0;
+  if (px > 0) document.querySelectorAll("#sealPanel .tier").forEach((b) => (b.lastElementChild.textContent = `${b.lastElementChild.textContent.split(" ")[0]} · ≈ ${count(Math.ceil((b.dataset.usd / px) * 100) / 100)} $ANSEM`));
+  renderSeal(sealsRes.status === "fulfilled" ? sealsRes.value?.seals?.[wallet] : null, a);
   const st = STATUS[a.status] || STATUS["NO ACTIVITY"];
   $("statusChip").className = `status-chip ${st.cls}`;
   $("statusIcon").innerHTML = st.icon;
@@ -264,9 +327,6 @@ async function load() {
     $("heroSub").textContent = "no earnings or AI costs found recently";
   }
   fig.classList.remove("skel");
-  $("lede").textContent = a.aiSpend.payments
-    ? `It earned ${money(a.feeIncome.last7dUsd)} and paid ${money(a.aiSpend.last7dUsd)} for AI in the last 7 days.`
-    : `It earned ${money(a.feeIncome.last7dUsd)} from its token in the last 7 days.`;
 
   $("miniEarned").textContent = money(a.feeIncome.last7dUsd);
   $("miniSpent").textContent = a.aiSpend.payments ? money(a.aiSpend.last7dUsd) : "None seen";
@@ -275,11 +335,10 @@ async function load() {
 
   $("kEarn").textContent = money(a.feeIncome.avgPerDayUsd);
   $("kSpend").textContent = a.aiSpend.payments ? money(a.aiSpend.avgPerDayUsd) : "None seen";
-  $("kAnswers").textContent = count(a.thoughtsPerDay.thriving || 0);
   $("kHolds").textContent = money(a.balances.usd);
   $("kHoldsSub").textContent = [[a.balances.sol, "SOL", 2], [a.balances.usdc, "USDC", 2], [a.balances.ansem, "$ANSEM", 1]]
     .filter(([v, u]) => v >= (u === "$ANSEM" ? 0.05 : 0.005)).map(([v, u, d]) => `${v.toFixed(d)} ${u}`).join(" · ") || "Nothing held";
-  ["kEarn", "kSpend", "kAnswers", "kHolds"].forEach((id) => $(id).classList.remove("skel"));
+  ["kEarn", "kSpend", "kHolds"].forEach((id) => $(id).classList.remove("skel"));
   $("moneySub").textContent = a.scanned.from
     ? `From its public activity between ${new Date(a.scanned.from).toLocaleDateString()} and ${new Date(a.scanned.to).toLocaleDateString()}.${a.scanned.partial ? " Solana's free connection was slow, so this covers only its most recent activity." : ""}`
     : "No recent public activity found.";

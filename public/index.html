@@ -47,7 +47,6 @@
   <div class="hero-bg" id="top">
     <section class="wrap hero" aria-labelledby="heroTitle">
       <div>
-        <span class="eyebrow"><span class="live-dot" aria-hidden="true"></span>Live on Solana</span>
         <h1 id="heroTitle">The AI agent that <span class="accent">pays its own bills.</span></h1>
         <form class="search" id="heroForm">
           <label class="sr-only" for="heroInput">Agent wallet address</label>
@@ -62,10 +61,10 @@
           <span class="status-chip" id="statusChip"><span id="statusIcon"></span><span id="statusText">LOADING</span></span>
           <span class="fresh" id="fresh"><span class="pulse" aria-hidden="true"></span><span id="freshText">Connecting…</span></span>
         </div>
-        <div><span class="hero-fig skel" id="runwayFig">14 days</span></div>
+        <div><span class="hero-fig skel" id="runwayFig">—</span></div>
         <div class="hero-sub" id="runwaySub">of thinking already paid for</div>
         <div class="meter" id="meter" role="meter" aria-label="Days paid ahead compared with the goal" aria-valuemin="0" aria-valuemax="14" aria-valuenow="0"><i id="meterFill"></i></div>
-        <div class="meter-note"><span id="meterLeft">Goal: 14 days paid ahead</span><span id="meterRight"></span></div>
+        <div class="meter-note"><span id="meterLeft"></span><span id="meterRight"></span></div>
         <p class="status-explain" id="statusExplain">&nbsp;</p>
         <div class="mini">
           <div><span class="mini-l">Earned</span><span class="mini-v up" id="miniEarned">—</span></div>
@@ -98,22 +97,22 @@
     <div class="kpis">
       <div class="card tile">
         <div class="label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="15" height="10" rx="2"/><path d="M21 11v2"/><path d="M7 10v4M11 10v4"/></svg>Thinking budget</div>
-        <div class="value skel" id="kBudget">$0.00</div>
+        <div class="value skel" id="kBudget">—</div>
         <div class="sub">Paid ahead, ready to spend</div>
       </div>
       <div class="card tile">
         <div class="label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12l7 7 7-7"/></svg>Money earned</div>
-        <div class="value up skel" id="kEarned">$0.00</div>
+        <div class="value up skel" id="kEarned">—</div>
         <div class="sub">From its token and paid reports</div>
       </div>
       <div class="card tile">
         <div class="label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 4.6L18 9.5l-4.2 1.9L12 16l-1.8-4.6L6 9.5l4.2-1.9z"/></svg>Spent on thinking</div>
-        <div class="value skel" id="kSpent">$0.00</div>
+        <div class="value skel" id="kSpent">—</div>
         <div class="sub" id="kSpentSub">&nbsp;</div>
       </div>
       <div class="card tile">
         <div class="label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h13v4"/><path d="M3 7v11a2 2 0 0 0 2 2h15V9H5a2 2 0 0 1-2-2z"/></svg>Wallet</div>
-        <div class="value skel" id="kWallet">$0.00</div>
+        <div class="value skel" id="kWallet">—</div>
         <div class="sub" id="kWalletSub">&nbsp;</div>
       </div>
     </div>
@@ -138,11 +137,11 @@
     <div class="card activity">
       <div class="activity-head">
         <h3 class="card-title">Every payment</h3>
-        <a href="/api/ledger" download="solvent-records.jsonl" style="font-size:14px">Download all records</a>
+        <a href="/api/ledger" download="solvent-records.jsonl" style="font-size:14px">Download the full record</a>
       </div>
       <div class="verify" id="verify">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/></svg>
-        <span id="verifyText">Checking the records…</span>
+        <span id="verifyText">Checking…</span>
       </div>
       <ol class="feed" id="feed"></ol>
       <div class="more-row"><button class="btn btn-ghost btn-sm" id="moreBtn" type="button" hidden>Show all payments</button></div>
@@ -152,7 +151,6 @@
   <section class="wrap section" id="give" aria-labelledby="giveTitle">
     <div class="card give">
       <div>
-        <span class="eyebrow">Uses $ANSEM</span>
         <h2 id="giveTitle">Keep Solvent thinking</h2>
       </div>
       <div>
@@ -230,12 +228,12 @@ function money(v, { sign = false } = {}) {
   const a = Math.abs(v);
   let s;
   if (a === 0) s = "$0";
-  else if (a >= 100) s = "$" + a.toLocaleString("en-US", { maximumFractionDigits: 0 });
   else if (a >= 0.01) s = "$" + a.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   else if (a >= 0.00001) s = "$" + Number(a.toPrecision(2)).toString();
   else s = "under $0.00001";
   return (v < 0 ? "−" : sign && v > 0 ? "+" : "") + s;
 }
+const goodTicker = (t) => (/^[A-Z0-9]{2,12}$/.test(t || "") ? t : "");
 const count = (n) => Number(n || 0).toLocaleString("en-US");
 function daysText(d) {
   if (d == null) return "No spending yet";
@@ -388,7 +386,7 @@ const STATUS = {
   INSOLVENT: { cls: "critical", icon: ICON.stop, word: "OUT OF MONEY", fill: "var(--critical)", explain: "Its budget is empty, so it has paused until it earns more." },
 };
 const BUCKETS = [
-  { key: "computeReserve", name: "Thinking budget", color: "var(--s1)", desc: "Pays for its AI, kept topped up 14 days ahead" },
+  { key: "computeReserve", name: "Thinking budget", color: "var(--s1)", desc: "Pays for its AI, kept topped up ahead of time" },
   { key: "ansemReserve", name: "$ANSEM savings", color: "var(--s2)", desc: "Saved in $ANSEM" },
   { key: "operatingCash", name: "Everyday cash", color: "var(--s3)", desc: "Covers network fees and running costs" },
   { key: "buyback", name: "Buying back its token", color: "var(--s4)", desc: "Buys its own token on the market" },
@@ -406,11 +404,11 @@ function describe(e) {
       break;
     case "thought":
       if (m.via === "reconciliation") {
-        d.what = m.correctsSeq != null ? `Final cost of #${m.correctsSeq} confirmed` : "AI cost confirmed";
+        d.what = "AI cost settled";
         d.amt = money(e.usd);
       } else {
         d.what = m.via === "audit_report" ? `Wrote a paid report with ${MODEL(m.model)}` : `Answered a question with ${MODEL(m.model)}`;
-        if (e.usd) d.amt = money(e.usd); else d.note = "cost confirmed in a later record";
+        if (e.usd) d.amt = money(e.usd);
       }
       break;
     case "compute_topup":
@@ -437,7 +435,7 @@ function renderFeed() {
     const d = describe(e);
     return `<li>
       <span class="bubble ${d.cls}">${d.icon}</span>
-      <div><div class="what">${esc(d.what)}</div><div class="meta"><time datetime="${esc(e.ts)}" title="${esc(new Date(e.ts).toLocaleString())}">${esc(ago(e.ts))}</time> · #${e.seq}${d.note ? ` · ${esc(d.note)}` : ""}</div></div>
+      <div><div class="what">${esc(d.what)}</div><div class="meta"><time datetime="${esc(e.ts)}" title="${esc(new Date(e.ts).toLocaleString())}">${esc(ago(e.ts))}</time>${d.note ? ` · ${esc(d.note)}` : ""}</div></div>
       <div class="right">${d.amt ? `<div class="amt ${d.amtCls}">${esc(d.amt)}</div>` : ""}${e.txSig ? `<a class="proof" href="${txUrl(e.txSig)}" target="_blank" rel="noopener">Proof ↗</a>` : ""}</div>
     </li>`;
   }).join("") : `<li><span class="bubble">${ICON.book}</span><div><div class="what">No payments yet</div><div class="meta">They'll appear here as soon as Solvent starts working.</div></div><div></div></li>`;
@@ -524,10 +522,10 @@ async function loadBooks() {
     v.className = "verify"; $("verifyText").textContent = "No records yet.";
   } else if (broken === -1) {
     v.className = "verify ok";
-    $("verifyText").textContent = `All ${entries.length} records checked in your browser. Nothing has been changed.`;
+    $("verifyText").textContent = `All ${entries.length} entries verified in your browser. Nothing has been changed.`;
   } else {
     v.className = "verify bad";
-    $("verifyText").textContent = `Warning: record #${broken} doesn't match. It may have been changed.`;
+    $("verifyText").textContent = "Warning: an entry doesn't match. It may have been changed.";
   }
   updateEstimate();
 }
@@ -540,9 +538,7 @@ function updateEstimate() {
   $("giveBtn").textContent = `Send ${count(amt)} $ANSEM`;
   if (!px) { $("giveEstimate").innerHTML = "&nbsp;"; return; }
   const usd = amt * px * 0.985;
-  const per = snap?.books?.thoughts ? snap.books.spentOnThinkingUsd / snap.books.thoughts : 0.0165;
-  const answers = Math.floor(usd / Math.max(per, 0.00005));
-  $("giveEstimate").innerHTML = `≈ <b>${esc(money(usd))}</b> of thinking · about <b>${esc(count(answers))}</b> answers at Solvent's average cost`;
+  $("giveEstimate").innerHTML = `≈ <b>${esc(money(usd))}</b> of thinking`;
 }
 document.querySelectorAll(".chip").forEach((c) => (c.onclick = () => {
   document.querySelectorAll(".chip").forEach((x) => x.setAttribute("aria-pressed", String(x === c)));
@@ -590,9 +586,23 @@ function aiTag(a) {
   if (a.status === "AT RISK") return `<span class="ai-tag warning">Pays more for AI than it earns</span>`;
   return "";
 }
+let sealMap = {}, sealBurned = 0;
+const TIER_LABEL = { bronze: "Bronze", silver: "Silver", gold: "Gold" };
+// A seal is lit while the agent is earning and not paying more for AI than it earns.
+function sealTag(e) {
+  const s = sealMap[e.payoutWallet];
+  if (!s) return "";
+  const a = e.audit;
+  const lit = !!a && a.status !== "AT RISK" && a.status !== "NO ACTIVITY" && a.feeIncome.last7dUsd > 0;
+  return lit ? `<span class="seal ${esc(s.tier)}">${esc(TIER_LABEL[s.tier] || "")} seal</span>` : "";
+}
 async function loadRanking() {
   try {
-    const r = await fetch("/api/solvency-index", { cache: "no-store" });
+    const [r, sealsRes] = await Promise.all([
+      fetch("/api/solvency-index", { cache: "no-store" }),
+      fetch("/api/seals").then((x) => (x.ok ? x.json() : null)).catch(() => null),
+    ]);
+    sealMap = sealsRes?.seals ?? {}; sealBurned = sealsRes?.burned ?? 0;
     if (!r.ok) throw new Error("not ready");
     const idx = await r.json();
     ranking = idx.entries.filter((e) => e.audit && e.payoutWallet && e.audit.feeIncome.avgPerDayUsd > 0).sort((x, y) => y.audit.feeIncome.avgPerDayUsd - x.audit.feeIncome.avgPerDayUsd);
@@ -600,7 +610,7 @@ async function loadRanking() {
     const medal = ["1st", "2nd", "3rd"];
     $("podium").innerHTML = ranking.slice(0, 3).map((e, i) => `<div class="card pod">
       <div class="top"><span class="medal">${medal[i]}</span><a href="https://clawpump.tech/tokens/${esc(e.mint)}" target="_blank" rel="noopener" style="font-size:13px">Token page ↗</a></div>
-      <div class="name" title="${esc(e.name)}"><a href="/agent/${esc(e.payoutWallet)}" style="color:inherit">${esc(e.name)}</a>${e.ticker ? ` <span class="ticker">$${esc(e.ticker)}</span>` : ""}</div>
+      <div class="name" title="${esc(e.name)}"><a href="/agent/${esc(e.payoutWallet)}" style="color:inherit">${esc(e.name)}</a>${goodTicker(e.ticker) ? ` <span class="ticker">$${esc(goodTicker(e.ticker))}</span>` : ""}</div>${sealTag(e)}
       <div class="big">${esc(money(e.audit.feeIncome.avgPerDayUsd))}<small> a day</small></div>
       <div class="sub">${esc(money(e.audit.feeIncome.last7dUsd))} in the last 7 days</div>
       ${aiTag(e.audit)}
@@ -611,13 +621,13 @@ async function loadRanking() {
       const v = e.audit.feeIncome.avgPerDayUsd;
       return `<div class="rrow" onclick="if (window.innerWidth <= 640 && !event.target.closest('a,button')) location.href='/agent/${esc(e.payoutWallet)}'" style="cursor:pointer" data-tip-title="${esc(e.name)}" data-tip="Earns ${esc(money(v))} a day, ${esc(money(e.audit.feeIncome.last7dUsd))} in the last 7 days">
         <span class="rk">${i + 4}</span>
-        <div class="nm"><a href="/agent/${esc(e.payoutWallet)}">${esc(e.name)}</a>${e.ticker ? `<span class="ticker">$${esc(e.ticker)}</span>` : ""}${aiTag(e.audit)}<div class="bar" style="width:${Math.max(0.6, (v / max) * 100)}%"></div></div>
+        <div class="nm"><a href="/agent/${esc(e.payoutWallet)}">${esc(e.name)}</a>${goodTicker(e.ticker) ? `<span class="ticker">$${esc(goodTicker(e.ticker))}</span>` : ""}${aiTag(e.audit)}${sealTag(e)}<div class="bar" style="width:${Math.max(0.6, (v / max) * 100)}%"></div></div>
         <div class="v"><b>${esc(money(v))}</b><span>a day</span></div>
         <div class="go"><button class="btn btn-ghost btn-sm" type="button" data-check="${esc(e.payoutWallet)}" data-name="${esc(e.name)}">Check</button></div>
       </div>`;
     }).join("") : `<div class="muted" style="padding:14px 0">Only the top three have earnings so far.</div>`;
     const paying = ranking.filter((e) => e.audit.aiSpend?.payments > 0).length;
-    $("rankNote").textContent = `Updated ${ago(idx.generatedAt)}.`;
+    $("rankNote").textContent = `Updated ${ago(idx.generatedAt)}.${sealBurned > 0 ? ` ${count(sealBurned)} $ANSEM burned by agents.` : ""}`;
     $("quick").innerHTML = `<span>Try:</span>` + ranking.slice(0, 3).map((e) => `<button type="button" data-check="${esc(e.payoutWallet)}" data-name="${esc(e.name)}">${esc(e.name)}</button>`).join("");
   } catch {
     $("rankList").innerHTML = `<div class="muted" style="padding:14px 0">The ranking is being updated. Please check back soon.</div>`;
@@ -635,12 +645,11 @@ document.addEventListener("click", (e) => {
 let lastCheck = null;
 function verdictFor(a) {
   const per = a.feeIncome.avgPerDayUsd;
-  const answers = count(a.thoughtsPerDay.thriving || 0);
   switch (a.status) {
     case "SOLVENT": return { cls: "good", icon: ICON.ok, title: `Solvent: earned ${money(a.feeIncome.last7dUsd)}, paid ${money(a.aiSpend.last7dUsd)} for AI`, text: `Its earnings covered what it paid for AI ${a.coverage >= 100 ? "more than 100" : a.coverage.toFixed(1)} times over the last 7 days.` };
     case "AT RISK": return { cls: "warning", icon: ICON.warn, title: `At risk: paid more for AI than it earned`, text: `It paid ${money(a.aiSpend.last7dUsd)} for AI and earned ${money(a.feeIncome.last7dUsd)} from its token in the last 7 days.` };
     case "NO AI COSTS SEEN": return per > 0
-      ? { cls: "good", icon: ICON.ok, title: `Earning ${money(per)} a day`, text: `That could pay for about ${answers} top-model answers a day. We don't see it paying for AI from this wallet.` }
+      ? { cls: "good", icon: ICON.ok, title: `Earning ${money(per)} a day`, text: "We don't see it paying for AI from this wallet." }
       : { cls: "warning", icon: ICON.warn, title: "No earnings in the last 7 days", text: "It has earned before, but nothing recently." };
     default: return { cls: "none", icon: ICON.book, title: "No activity found", text: "We couldn't find token earnings or AI costs for this wallet in its recent activity." };
   }
@@ -657,7 +666,6 @@ async function runCheck(name) {
     if (!r.ok) throw new Error("bad");
     lastCheck = { wallet: w, audit: a, name };
     const v = verdictFor(a);
-    const t = a.thoughtsPerDay;
     out.innerHTML = `<div class="result">
       <div class="verdict ${v.cls}">${v.icon}<div><b>${name ? `${esc(name)}: ` : ""}${esc(v.title)}</b><span>${esc(v.text)}</span></div></div>
       <div class="rstats">
