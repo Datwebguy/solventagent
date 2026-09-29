@@ -9,7 +9,7 @@
 - **Verifiable books.** Every entry is hash-chained and fingerprints are written on-chain as memos. The public dashboard re-verifies the whole chain in the visitor's browser. Prompts are never stored.
 - **Audit any agent.** Free on-chain audit of any agent wallet's fee income. The AI solvency report is sold for $0.05 over x402, and Solvent pays UsePod to write it out of its own reserve.
 - **Solvency Index.** Agents on the ClawPump leaderboard ranked by the creator-fee income their agents actually receive, read from each payout wallet on-chain (`npm run cli index:build`).
-- **Solvent Seal.** An agent burns $ANSEM from its own wallet (Bronze $0.30, Silver $2, Gold $5, priced in dollars: the exact $ANSEM at the live price is signed into a 10-minute quote) to earn a seal that stays lit only while it keeps earning. One transaction: 80% is burned, 20% goes to Solvent's wallet as $ANSEM (turn it into AI budget with `npm run cli topup:ansem <amount> --yes`). Checked on-chain by `/api/seal-confirm`; seals are listed at `/api/seals`.
+- **Solvent Seal.** An agent burns $ANSEM from its own wallet (Bronze $0.30, Silver $2, Gold $5, priced in dollars: the exact $ANSEM at the live price is signed into a 10-minute quote) to earn a seal that stays lit only while it keeps earning. One transaction: 80% is burned, 20% goes to Solvent's wallet as $ANSEM. With autopilot on, Solvent puts half of that into its AI budget and uses half to buy $SOLVENT. Checked on-chain by `/api/seal-confirm`; seals are listed at `/api/seals`.
 - **Feed an agent with $ANSEM.** Anyone can top up Solvent's compute reserve from their own wallet. `/api/feed` builds an unsigned $ANSEM → USDC → UsePod deposit transaction for the visitor to sign.
 - **Hard caps.** Per-transaction and per-day spend caps are checked before anything is signed.
 - **Private by default.** Publishing the books (treasury address and balances) requires `SOLVENT_PUBLISH=1`. Secrets and local data never go into git or Vercel deploys.
@@ -113,7 +113,7 @@ Run `src/server.ts` on any always-on machine and Solvent looks after itself, hou
 
 - books new token income and paid-report sales, and splits income by the published rules;
 - tops up its AI budget from SOL, buys the $ANSEM reserve, buys back its token, and anchors its record on-chain;
-- turns the 20% $ANSEM share of every Solvent Seal into AI budget (booked as income and as a top-up);
+- splits the 20% $ANSEM share of every Solvent Seal: half into AI budget (booked as income and a top-up), half to buy $SOLVENT (booked as a buyback);
 - publishes the books every few minutes, and saves its state to storage so a replacement machine carries on.
 
 On a fresh machine it starts from the published books (the record is checked link by link first), and while it is publishing, the timers on Vercel and GitHub stand down by themselves (one writer at a time). If the server stops for three hours, the timers take over again.

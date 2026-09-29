@@ -422,7 +422,7 @@ function describe(e) {
       d.icon = ICON.swap;
       d.what = m.to === ANSEM_MINT ? `Put ${money(m.amountUsd)} into $ANSEM savings` : `Exchanged ${money(m.amountUsd)}`;
       break;
-    case "buyback": d.icon = ICON.back; d.what = `Bought back ${money(m.amountUsd)} of its token`; d.amt = money(e.usd); break;
+    case "buyback": d.icon = ICON.back; d.what = m.source === "seal_share" ? `Bought ${money(m.amountUsd)} of $SOLVENT with a seal's $ANSEM` : `Bought back ${money(m.amountUsd)} of its token`; d.amt = money(e.usd); break;
     case "policy_commit": d.icon = ICON.shield; d.what = "Published its budget rules on Solana"; break;
     case "anchor": d.icon = ICON.lock; d.what = "Saved a snapshot of its records to Solana"; break;
     case "capital": d.icon = ICON.wallet; d.what = "Received a deposit"; if (m.sol) d.note = `${Number(m.sol).toFixed(4)} SOL`; break;

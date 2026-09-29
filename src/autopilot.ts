@@ -114,34 +114,18 @@ export async function bootstrapFromPublished(log: (s: string) => void = console.
 export interface SealShare {
   signature: string;
   wallet: string;
-  /** The 20% share of the seal payment, in $ANSEM. */
+  /** Solvent's 20% share of the seal payment, in $ANSEM. */
   ansem: number;
   at: string;
 }
 
-/** Pure: seal payments whose 20% share has not been turned into AI budget yet, oldest first. */
+/** Pure: seal payments whose 20% share Solvent has not finished using yet, oldest first. */
 export function sealSharesToConvert(records: SealRecord[], converted: string[]): SealShare[] {
   const done = new Set(converted);
   return records
     .flatMap((r) => (r.payments ?? []).map((p) => ({ signature: p.signature, wallet: r.wallet, ansem: p.fee, at: p.at })))
     .filter((s) => s.ansem > 0 && !done.has(s.signature))
     .sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
-}
-
-/**
- * Pure: which shares to convert this cycle, in order, while the wallet holds enough $ANSEM and
- * each one fits the per-transaction cap. Anything left over waits for the next cycle.
- */
-export function planSealShares(shares: SealShare[], balanceAnsem: number, ansemUsd: number, maxTxUsd: number): (SealShare & { usd: number })[] {
-  const out: (SealShare & { usd: number })[] = [];
-  let left = balanceAnsem;
-  for (const s of shares) {
-    const usd = s.ansem * ansemUsd;
-    if (s.ansem > left + 1e-9 || usd > maxTxUsd) continue;
-    out.push({ ...s, usd });
-    left -= s.ansem;
-  }
-  return out;
 }
 
 /** Every seal record with its payments, straight from storage. */
