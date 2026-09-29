@@ -415,6 +415,11 @@
   @media (max-width: 640px) { .rrow .ai-tag { margin: 4px 0 0; display: flex; width: max-content; } }
 
   .hero .search { max-width: 520px; margin-top: 28px; }
+  .buy { max-width: 520px; margin-top: 18px; display: grid; gap: 10px; }
+  .buy-ca { display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 14px; border: 1px solid var(--hairline-2); border-radius: 12px; background: var(--surface); min-width: 0; }
+  .buy-label { font-weight: 700; color: var(--brand); white-space: nowrap; }
+  .buy-ca code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; color: var(--ink-2); }
+  .buy-links { display: flex; flex-wrap: wrap; gap: 8px; }
 
   /* Solvent Seal */
   .seal { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; padding: 5px 12px; border-radius: 999px; font-weight: 700; font-size: 13px; border: 1px solid; }

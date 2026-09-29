@@ -35,6 +35,7 @@
       <a href="#ranking">Ranking</a>
       <a href="#books">Live books</a>
       <a href="#check">Check an agent</a>
+      <a href="#buy">Buy $SOLVENT</a>
       <a href="https://github.com/Datwebguy/solventagent#readme" target="_blank" rel="noopener">Developers ↗</a>
     </nav>
     <div class="nav-actions">
@@ -56,6 +57,18 @@
           <input id="heroInput" placeholder="Paste any agent's wallet" autocomplete="off" spellcheck="false" />
           <button class="btn btn-primary" type="submit">Check it</button>
         </form>
+        <div class="buy" id="buy">
+          <div class="buy-ca">
+            <span class="buy-label">$SOLVENT</span>
+            <code id="caText">DXSrhYfkyEdjH2W4QrMTR9vbY4813eyKchyCYbEsf5AL</code>
+            <button class="btn btn-ghost btn-sm" id="caCopy" type="button">Copy CA</button>
+          </div>
+          <div class="buy-links">
+            <a class="btn btn-ghost btn-sm" href="https://clawpump.tech/tokens/DXSrhYfkyEdjH2W4QrMTR9vbY4813eyKchyCYbEsf5AL" target="_blank" rel="noopener">Buy on ClawPump ↗</a>
+            <a class="btn btn-ghost btn-sm" href="https://jup.ag/swap/SOL-DXSrhYfkyEdjH2W4QrMTR9vbY4813eyKchyCYbEsf5AL" target="_blank" rel="noopener">Jupiter ↗</a>
+            <a class="btn btn-ghost btn-sm" href="https://pump.fun/coin/DXSrhYfkyEdjH2W4QrMTR9vbY4813eyKchyCYbEsf5AL" target="_blank" rel="noopener">pump.fun ↗</a>
+          </div>
+        </div>
       </div>
 
       <aside class="card health" aria-labelledby="healthTitle">
@@ -362,6 +375,10 @@ async function connectWallet() {
   renderWallet();
   return wallet;
 }
+$("caCopy").onclick = async () => {
+  try { await navigator.clipboard.writeText($("caText").textContent.trim()); toast("CA copied."); }
+  catch { toast($("caText").textContent.trim()); }
+};
 // ---------- get a seal ----------
 let sealTier = "bronze";
 document.querySelectorAll("#seal .tier").forEach((b) => (b.onclick = () => {
