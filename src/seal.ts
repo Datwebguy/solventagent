@@ -18,9 +18,9 @@ import { connection, memoInstruction } from "./solana.js";
  * wallet, which is also the proof that the wallet belongs to whoever asks for the seal.
  */
 export const TIERS = [
-  { name: "bronze", ansem: 1 },
-  { name: "silver", ansem: 10 },
-  { name: "gold", ansem: 50 },
+  { name: "bronze", ansem: 2 },
+  { name: "silver", ansem: 14 },
+  { name: "gold", ansem: 35 },
 ] as const;
 export type TierName = (typeof TIERS)[number]["name"];
 

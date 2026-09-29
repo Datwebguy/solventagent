@@ -23,12 +23,12 @@ const tx = (instructions: Ix[], opts: { signer?: string; err?: unknown } = {}) =
 
 describe("seal tiers and split", () => {
   it("gives the highest tier reached, none below the first", () => {
-    expect(tierFor(0.99)).toBeNull();
-    expect(tierFor(1)).toBe("bronze");
-    expect(tierFor(9.99)).toBe("bronze");
-    expect(tierFor(10)).toBe("silver");
-    expect(tierFor(49)).toBe("silver");
-    expect(tierFor(50)).toBe("gold");
+    expect(tierFor(1.99)).toBeNull();
+    expect(tierFor(2)).toBe("bronze");
+    expect(tierFor(13.99)).toBe("bronze");
+    expect(tierFor(14)).toBe("silver");
+    expect(tierFor(34)).toBe("silver");
+    expect(tierFor(35)).toBe("gold");
     expect(tierFor(5000)).toBe("gold");
   });
 
@@ -100,6 +100,6 @@ describe("seal record", () => {
     expect(r.total).toBeCloseTo(11);
     expect(r.burned).toBeCloseTo(8.8);
     expect(r.payments).toHaveLength(2);
-    expect(tierFor(r.total)).toBe("silver");
+    expect(tierFor(r.total)).toBe("bronze");
   });
 });
