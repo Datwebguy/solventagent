@@ -18,6 +18,7 @@ import { readState, runCycle, writeState } from "./cycle.js";
 import { FileLedger, verifyChain, type Entry } from "./ledger.js";
 import { Policy } from "./policy.js";
 import { ingestInbox, PUBLIC_PREFIX, publish } from "./publish.js";
+import { serverIsPublishing } from "./autopilot.js";
 import { tokenBalanceMicros } from "./usepod/client.js";
 
 const STATE_BLOB = `${PUBLIC_PREFIX}state/treasurer.json`;
@@ -89,6 +90,11 @@ export async function keepBooks(log: (s: string) => void = console.log): Promise
   if (!env.SOLVENT_PUBLISH) throw new Error("SOLVENT_PUBLISH must be 1: the keeper's job is to publish the books");
   if (env.SOLVENT_AUTOPILOT) throw new Error("The keeper never moves funds; unset SOLVENT_AUTOPILOT");
 
+  // One writer at a time: when the always-on server is publishing the books, the timers stand down.
+  if (await serverIsPublishing(token)) {
+    log("the always-on server is publishing the books; nothing to do here");
+    return { ran: false, reason: "the always-on server is publishing the books" };
+  }
   if (!(await takeLock(token))) {
     log("another bookkeeping run is in progress; skipping this one");
     return { ran: false, reason: "another run is in progress" };

@@ -12,6 +12,7 @@ import { sendMemo, solBalance, solscanTx } from "./solana.js";
 import { BUCKET, EMPTY_PENDING, needsAnchor, planCycle, type Pending, type Plan } from "./treasurer.js";
 import { tokenBalanceMicros } from "./usepod/client.js";
 import { depositSol } from "./usepod/pay.js";
+import { convertSealShares } from "./seal-shares.js";
 import { loadTreasury } from "./wallet.js";
 
 /** SOL always left in the wallet for network fees. */
@@ -26,6 +27,8 @@ export interface State {
   anchoredSeq?: number;
   /** Last UsePod reserve balance the bookkeeper saw, in microdollars. */
   reserveMicros?: number;
+  /** Seal payments whose 20% $ANSEM share has already been turned into AI budget. */
+  sealSigs?: string[];
 }
 
 const statePath = () => join(env.SOLVENT_DATA_DIR, "treasurer.json");
@@ -167,6 +170,17 @@ export async function runCycle({
     }
   }
 
+  // The 20% $ANSEM share of each Solvent Seal becomes AI budget.
+  let sealSigs = state.sealSigs ?? [];
+  try {
+    const shares = await convertSealShares(signer, ledger, sealSigs, log);
+    sealSigs = [...sealSigs, ...shares.done];
+    report.txs.push(...shares.txs);
+    report.failures.push(...shares.failures);
+  } catch (err) {
+    log(`  seal shares skipped: ${err instanceof Error ? err.message : String(err)}`);
+  }
+
   let anchoredSeq = state.anchoredSeq;
   const head = ledger.head();
   if (head && needsAnchor(head, anchoredSeq)) {
@@ -181,6 +195,6 @@ export async function runCycle({
     }
   }
 
-  writeState({ ...state, cursor, pending, lastRunAt: new Date().toISOString(), anchoredSeq });
+  writeState({ ...state, cursor, pending, lastRunAt: new Date().toISOString(), anchoredSeq, sealSigs });
   return report;
 }
