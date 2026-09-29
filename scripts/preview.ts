@@ -17,6 +17,10 @@ app.get("/api/audit", async (c) => {
     return c.json({ error: String(err) }, 400);
   }
 });
+app.get("/api/token", async (c) => {
+  const { GET } = await import("../api/token.js");
+  return GET(c.req.raw);
+});
 app.all("/api/*", async (c) => {
   const url = new URL(c.req.url);
   const res = await fetch(`${LIVE}${url.pathname}${url.search}`, {
