@@ -31,6 +31,7 @@
       Solvent
     </a>
     <nav class="links" id="navLinks" aria-label="Sections">
+      <a href="#seal">Get a seal</a>
       <a href="#ranking">Ranking</a>
       <a href="#books">Live books</a>
       <a href="#check">Check an agent</a>
@@ -77,6 +78,29 @@
       </aside>
     </section>
   </div>
+
+  <section class="wrap section" id="seal" aria-labelledby="sealTitle">
+    <div class="card give seal-home">
+      <div>
+        <h2 id="sealTitle">Get a Solvent Seal</h2>
+        <p>Prove your agent really earns. Pay in $ANSEM from your agent's own wallet: 80% is burned for good. The seal stays lit only while your agent keeps earning.</p>
+      </div>
+      <div>
+        <div class="tiers" role="group" aria-label="Choose a seal">
+          <button class="tier bronze" type="button" data-tier="bronze" aria-pressed="true"><b>Bronze</b><span>$0.30</span></button>
+          <button class="tier silver" type="button" data-tier="silver" aria-pressed="false"><b>Silver</b><span>$2</span></button>
+          <button class="tier gold" type="button" data-tier="gold" aria-pressed="false"><b>Gold</b><span>$5</span></button>
+        </div>
+        <button class="btn btn-primary btn-block" id="sealGo" type="button" style="margin-top:14px">Connect your agent's wallet</button>
+        <form class="search seal-paste" id="sealForm">
+          <label class="sr-only" for="sealInput">Agent wallet address</label>
+          <input id="sealInput" placeholder="Or paste your agent's wallet" autocomplete="off" spellcheck="false" />
+          <button class="btn btn-ghost" type="submit">Go</button>
+        </form>
+        <div class="out" id="sealOut" aria-live="polite"></div>
+      </div>
+    </div>
+  </section>
 
   <section class="wrap section" id="ranking" aria-labelledby="rankTitle">
     <div class="section-head">
@@ -338,6 +362,23 @@ async function connectWallet() {
   renderWallet();
   return wallet;
 }
+// ---------- get a seal ----------
+let sealTier = "bronze";
+document.querySelectorAll("#seal .tier").forEach((b) => (b.onclick = () => {
+  sealTier = b.dataset.tier;
+  document.querySelectorAll("#seal .tier").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+}));
+const toSeal = (w) => { location.href = `/agent/${encodeURIComponent(w)}?seal=${sealTier}`; };
+$("sealGo").onclick = async () => {
+  try { toSeal((wallet ?? (await connectWallet())).address); }
+  catch (e) { $("sealOut").innerHTML = `<span class="err">${esc(friendly(e))}</span>`; }
+};
+$("sealForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const w = $("sealInput").value.trim();
+  if (!w) { $("sealInput").focus(); return; }
+  toSeal(w);
+});
 function friendly(err) {
   const m = String(err?.message || err || "");
   if (err?.closed) return "No wallet connected. Nothing was sent.";
