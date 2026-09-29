@@ -64,7 +64,7 @@
         <div><span class="hero-fig skel" id="runwayFig">—</span></div>
         <div class="hero-sub" id="runwaySub">of thinking already paid for</div>
         <div class="meter" id="meter" role="meter" aria-label="Days paid ahead compared with the goal" aria-valuemin="0" aria-valuemax="14" aria-valuenow="0"><i id="meterFill"></i></div>
-        <div class="meter-note"><span id="meterLeft">Goal: 14 days paid ahead</span><span id="meterRight"></span></div>
+        <div class="meter-note"><span id="meterLeft"></span><span id="meterRight"></span></div>
         <p class="status-explain" id="statusExplain">&nbsp;</p>
         <div class="mini">
           <div><span class="mini-l">Earned</span><span class="mini-v up" id="miniEarned">—</span></div>
@@ -386,7 +386,7 @@ const STATUS = {
   INSOLVENT: { cls: "critical", icon: ICON.stop, word: "OUT OF MONEY", fill: "var(--critical)", explain: "Its budget is empty, so it has paused until it earns more." },
 };
 const BUCKETS = [
-  { key: "computeReserve", name: "Thinking budget", color: "var(--s1)", desc: "Pays for its AI, kept topped up 14 days ahead" },
+  { key: "computeReserve", name: "Thinking budget", color: "var(--s1)", desc: "Pays for its AI, kept topped up ahead of time" },
   { key: "ansemReserve", name: "$ANSEM savings", color: "var(--s2)", desc: "Saved in $ANSEM" },
   { key: "operatingCash", name: "Everyday cash", color: "var(--s3)", desc: "Covers network fees and running costs" },
   { key: "buyback", name: "Buying back its token", color: "var(--s4)", desc: "Buys its own token on the market" },
