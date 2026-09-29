@@ -74,7 +74,7 @@
       "post": {
         "operationId": "sealQuote",
         "summary": "Get a Solvent Seal: unsigned transaction",
-        "description": "Tiers are priced in dollars: bronze $0.30, silver $2, gold $5. Returns an unsigned transaction for the agent's own wallet to sign and submit: it burns 80% of the quoted $ANSEM and sends 20% to Solvent's AI budget. The $ANSEM amount is fixed at the live price for 10 minutes. The wallet must hold enough $ANSEM. Then call /api/seal-confirm.",
+        "description": "Tiers are priced in dollars: bronze $0.30, silver $2, gold $5. Returns an unsigned transaction for the agent's own wallet to sign and submit: it burns 80% of the quoted $ANSEM and sends 20% to Solvent, which uses half for its AI and half to buy $SOLVENT. The $ANSEM amount is fixed at the live price for 10 minutes. The wallet must hold enough $ANSEM. Then call /api/seal-confirm.",
         "parameters": [
           { "name": "wallet", "in": "query", "required": true, "description": "The agent's own wallet, which signs and pays", "schema": { "type": "string" } },
           { "name": "tier", "in": "query", "required": true, "schema": { "type": "string", "enum": ["bronze", "silver", "gold"] } }

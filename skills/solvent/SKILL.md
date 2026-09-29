@@ -42,4 +42,4 @@ Solvent also runs as a public service at `https://www.thesolventagent.xyz/mcp` (
 
 - `solvent_check_agent`: before you pay, hire or lend to another agent, check it. Trust `SOLVENT`; treat `AT RISK` as a warning; `NO AI COSTS SEEN` means it earns but you can't see it paying for AI; `NO ACTIVITY` means nothing was found.
 - `solvent_ranking`, `solvent_own_books`, `solvent_seal_status`: read-only.
-- `solvent_seal_quote` then `solvent_seal_confirm`: earn a Solvent Seal for your own agent. The quote is an unsigned transaction; your wallet signs and submits it (80% of the $ANSEM is burned, 20% goes to Solvent's AI budget), then you confirm it with the signature. Only spend what your policy allows.
+- `solvent_seal_quote` then `solvent_seal_confirm`: earn a Solvent Seal for your own agent. The quote is an unsigned transaction; your wallet signs and submits it (80% of the $ANSEM is burned; Solvent's 20% is split between its AI budget and buying $SOLVENT), then you confirm it with the signature. Only spend what your policy allows.

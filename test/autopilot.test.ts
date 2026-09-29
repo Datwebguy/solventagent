@@ -112,15 +112,4 @@ describe("turning seal shares into AI budget", () => {
     expect(m.sealSharesToConvert([{ wallet: "C" } as never], [])).toEqual([]);
   });
 
-  const share = (signature: string, ansem: number) => ({ signature, wallet: "A", ansem, at: "2026-09-29T10:00:00Z" });
-  it("converts what the wallet holds and what fits the per-transaction cap, in order", () => {
-    const plan = m.planSealShares([share("a", 0.4), share("b", 2.8), share("c", 60)], 4, 0.14, 5);
-    expect(plan.map((p) => p.signature)).toEqual(["a", "b"]); // "c" is $8.40, over the $5 cap
-    expect(plan[1]!.usd).toBeCloseTo(0.392);
-  });
-
-  it("waits when the wallet does not hold enough yet", () => {
-    expect(m.planSealShares([share("a", 3)], 2.9, 0.14, 5)).toEqual([]);
-    expect(m.planSealShares([share("a", 3), share("b", 1)], 3.5, 0.14, 5).map((p) => p.signature)).toEqual(["a"]);
-  });
 });

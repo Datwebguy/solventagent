@@ -6,7 +6,7 @@ import { buildSealTransaction, tierUsd, TIERS, type TierName } from "../src/seal
  * Unsigned transaction to buy a Solvent Seal: POST /api/seal?wallet=<agent wallet>&tier=bronze|silver|gold
  * Tiers are priced in dollars; the $ANSEM amount is worked out at the live price and signed into
  * a 10-minute quote. The agent's own wallet signs the transaction: 80% of the $ANSEM is burned and
- * 20% goes to Solvent's AI budget. Nothing is held or signed here.
+ * 20% goes to Solvent (half for its AI, half to buy $SOLVENT). Nothing is held or signed here.
  */
 export async function POST(request: Request): Promise<Response> {
   const url = new URL(request.url);

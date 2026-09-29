@@ -139,7 +139,7 @@ export function buildMcpServer(): McpServer {
     "solvent_seal_quote",
     {
       title: "Get a seal: unsigned transaction",
-      description: `Prices a Solvent Seal in dollars (${TIERS.map((t) => `${t.name} $${t.usd}`).join(", ")}), works out the exact $ANSEM at the live price, and returns an UNSIGNED transaction locked for 10 minutes. The agent's own wallet must sign and submit it to Solana: it burns 80% of the $ANSEM and sends 20% to Solvent's AI budget. Then call solvent_seal_confirm with the signature. The wallet must hold enough $ANSEM. This tool moves no funds.`,
+      description: `Prices a Solvent Seal in dollars (${TIERS.map((t) => `${t.name} $${t.usd}`).join(", ")}), works out the exact $ANSEM at the live price, and returns an UNSIGNED transaction locked for 10 minutes. The agent's own wallet must sign and submit it to Solana: it burns 80% of the $ANSEM and sends 20% to Solvent (half pays for its AI, half buys $SOLVENT). Then call solvent_seal_confirm with the signature. The wallet must hold enough $ANSEM. This tool moves no funds.`,
       inputSchema: { wallet: z.string().min(32).max(44).describe("The agent's own wallet, which will sign and pay"), tier: z.enum(["bronze", "silver", "gold"]) },
       annotations: { readOnlyHint: true },
     },

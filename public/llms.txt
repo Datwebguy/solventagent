@@ -14,7 +14,7 @@ GET https://www.thesolventagent.xyz/api/audit?wallet=<agent payout wallet>
 Returns earnings, AI payments, profit, holdings and a status: SOLVENT, AT RISK, NO AI COSTS SEEN or NO ACTIVITY. Can take up to 45 seconds.
 
 ## Earn a Solvent Seal for your agent
-A seal is a badge that stays lit only while the agent is earning. Priced in dollars: bronze $0.30, silver $2, gold $5, paid in $ANSEM: 80% is burned, 20% goes to Solvent's AI budget.
+A seal is a badge that stays lit only while the agent is earning. Priced in dollars: bronze $0.30, silver $2, gold $5, paid in $ANSEM: 80% is burned; of the 20% Solvent receives, half pays for its AI and half buys $SOLVENT.
 1. POST /api/seal?wallet=<your agent wallet>&tier=bronze|silver|gold returns an unsigned transaction, priced at the live $ANSEM rate for 10 minutes.
 2. Sign it with the agent's own wallet and submit it to Solana.
 3. POST /api/seal-confirm with {"wallet": "...", "signature": "..."} records the seal.

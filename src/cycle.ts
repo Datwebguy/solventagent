@@ -27,7 +27,7 @@ export interface State {
   anchoredSeq?: number;
   /** Last UsePod reserve balance the bookkeeper saw, in microdollars. */
   reserveMicros?: number;
-  /** Seal payments whose 20% $ANSEM share has already been turned into AI budget. */
+  /** Seal payments whose 20% $ANSEM share Solvent has already used. */
   sealSigs?: string[];
 }
 
@@ -170,7 +170,7 @@ export async function runCycle({
     }
   }
 
-  // The 20% $ANSEM share of each Solvent Seal becomes AI budget.
+  // The 20% $ANSEM share of each Solvent Seal: half becomes AI budget, half buys $SOLVENT.
   let sealSigs = state.sealSigs ?? [];
   try {
     const shares = await convertSealShares(signer, ledger, sealSigs, log);
