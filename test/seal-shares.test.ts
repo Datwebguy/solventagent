@@ -137,4 +137,14 @@ describe("converting seal shares into AI budget", () => {
       expect(deposit).not.toHaveBeenCalled();
     });
   });
+
+  it("does not count Solvent's own seal as income", async () => {
+    records.value = [{ ...seal([{ signature: "selfSig", fee: 0.4 }]), wallet: signer.publicKey.toBase58() }];
+    const ledger = new FileLedger();
+    const before = ledger.all().length;
+    const r = await convertSealShares(signer, ledger, [], () => {});
+    expect(r.done).toEqual([]);
+    expect(deposit).not.toHaveBeenCalled();
+    expect(ledger.all()).toHaveLength(before);
+  });
 });

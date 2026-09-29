@@ -47,8 +47,9 @@ export async function convertSealShares(
   const { ai, bought } = sealShareProgress(ledger.all());
   // A share is finished once its AI half is booked and, when it was split, its $SOLVENT half too.
   // (A share booked before the split existed went all to AI.)
+  // Solvent's own seal is paid from its own wallet, so its share is not income and is left as is.
   const shares = sealSharesToConvert(await readSealRecords(), converted).filter(
-    (s) => !(ai.has(s.signature) && (ai.get(s.signature) === false || bought.has(s.signature) || !mint)),
+    (s) => s.wallet !== signer.publicKey.toBase58() && !(ai.has(s.signature) && (ai.get(s.signature) === false || bought.has(s.signature) || !mint)),
   );
   if (!shares.length) return result;
 
