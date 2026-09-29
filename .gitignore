@@ -12,3 +12,6 @@ dist/
 solvent.policy.json
 !.env.example
 data-archive-*/
+
+# Local demo video renders
+demo/
