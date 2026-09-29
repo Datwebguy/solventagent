@@ -226,6 +226,15 @@ function renderSeal(record, audit) {
     : `<span class="seal off" title="The agent has stopped earning, so its seal is switched off.">Seal off</span>`;
 }
 $("sealBtn").onclick = () => { $("sealPanel").hidden = !$("sealPanel").hidden; };
+// Arriving from "Get a seal" on the home page: open the seal options with the chosen tier marked.
+{
+  const pick = new URLSearchParams(location.search).get("seal");
+  if (pick) {
+    $("sealPanel").hidden = false;
+    document.querySelectorAll("#sealPanel .tier").forEach((b) => b.classList.toggle("picked", b.dataset.tier === pick));
+    setTimeout(() => $("sealPanel").scrollIntoView({ behavior: "smooth", block: "center" }), 300);
+  }
+}
 async function buySeal(tier) {
   const out = $("sealOut");
   const buttons = [...document.querySelectorAll("#sealPanel .tier")];
