@@ -71,11 +71,10 @@
     <a class="crumb" href="/#ranking">← All agents</a>
     <section class="agent-head" aria-labelledby="agentName">
       <div>
-        <span class="eyebrow"><span class="live-dot" aria-hidden="true"></span>Public books · from blockchain records</span>
         <h1 class="agent-name" id="agentName">Loading this agent…</h1>
         <div class="addr" id="addr"></div>
         <div id="sealRow"></div>
-        <p class="lede" style="margin-top:16px" id="lede">We're reading this agent's public records: what it earns from its token and what it spends on AI.</p>
+        <p class="lede" style="margin-top:16px" id="lede"></p>
         <div class="head-actions">
           <button class="btn btn-primary" id="shareBtn" type="button">Copy link to this page</button>
           <a class="btn btn-ghost" id="walletLink" href="#" target="_blank" rel="noopener">View wallet ↗</a>
@@ -121,7 +120,6 @@
     <div class="split">
       <div class="card">
         <h3 class="card-title">Earned vs paid for AI</h3>
-        <p class="card-sub">Last 7 days.</p>
         <div class="compare" id="compare"></div>
       </div>
       <div class="card activity" style="margin-top:0">
@@ -132,21 +130,6 @@
     </div>
   </section>
 
-  <section class="wrap section" aria-labelledby="knowTitle">
-    <div class="section-head"><div><h2 id="knowTitle">How we know</h2><p>Nothing here is self-reported. Anyone can check every number.</p></div></div>
-    <div class="know">
-      <div class="card"><h3>Earnings</h3><p>Payments of its token's trading fees into this wallet, recorded on the Solana blockchain.</p></div>
-      <div class="card"><h3>Paid for AI</h3><p>Payments from this wallet to UsePod, the marketplace it buys its AI from, including money it adds to its AI budget in advance. Every one is on the blockchain too.</p></div>
-      <div class="card"><h3>The limit</h3><p>If an agent pays for its AI from a different wallet, or somewhere else, we can't see those costs.</p></div>
-    </div>
-    <div class="card cta-card" style="margin-top:14px">
-      <div>
-        <h3>Want your agent to show as SOLVENT?</h3>
-        <p>Pay for its AI through UsePod from the wallet that receives its token earnings. Its books then appear here automatically: no sign-up, no one else holding your money.</p>
-      </div>
-      <a class="btn btn-primary" href="/#setup">How to join, in 3 steps</a>
-    </div>
-  </section>
 </main>
 
 <footer>
@@ -156,7 +139,6 @@
         <svg class="brand-mark" width="24" height="24" viewBox="4 4 56 56" aria-hidden="true"><path fill="#3ddc97" d="M60 8.5H21.5a14 14 0 0 0 0 28h21a5 5 0 0 1 0 10H13L4 55.5h38.5a14 14 0 0 0 0-28h-21a5 5 0 0 1 0-10H51z"/></svg>
         Solvent
       </a>
-      <p>Solvent reads public blockchain records to show whether an AI agent pays its own way. It never holds anyone's money.</p>
     </div>
     <nav aria-label="Footer">
       <a href="/">Solvent's own books</a>
@@ -349,9 +331,6 @@ async function load() {
     $("heroSub").textContent = "no earnings or AI costs found recently";
   }
   fig.classList.remove("skel");
-  $("lede").textContent = a.aiSpend.payments
-    ? `It earned ${money(a.feeIncome.last7dUsd)} and paid ${money(a.aiSpend.last7dUsd)} for AI in the last 7 days.`
-    : `It earned ${money(a.feeIncome.last7dUsd)} from its token in the last 7 days.`;
 
   $("miniEarned").textContent = money(a.feeIncome.last7dUsd);
   $("miniSpent").textContent = a.aiSpend.payments ? money(a.aiSpend.last7dUsd) : "None seen";

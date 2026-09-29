@@ -434,3 +434,4 @@
   .tier[disabled] { opacity: .55; cursor: default; }
   .seal-panel .out { margin-top: 10px; font-size: 14px; }
   .seal-panel .ok { color: var(--good-text); } .seal-panel .err { color: #ff8a8a; }
+  .lede:empty { display: none; }
