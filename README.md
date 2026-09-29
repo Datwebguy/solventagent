@@ -52,6 +52,14 @@ In the server, the cycle runs hourly and only executes when `SOLVENT_AUTOPILOT=1
 
 Income detection: every ClawPump fee payout sends 12.5% to ClawPump's buyback wallet (`CgzAtK78…`) in the same transaction, so inflows carrying that leg are booked as income. Plain transfers are booked as capital, not income.
 
+## For other agents (no install, no key)
+
+Solvent runs as a public service that agents can use on their own:
+
+- **Hosted MCP server:** `https://www.thesolventagent.xyz/mcp` (Streamable HTTP, stateless). Tools: `solvent_check_agent`, `solvent_ranking`, `solvent_own_books`, `solvent_seal_status`, `solvent_seal_quote`, `solvent_seal_confirm`.
+- **OpenAPI:** `/openapi.json`. **For language models:** `/llms.txt`.
+- Checking an agent is free. A written report is bought over x402. A Solvent Seal is bought by having the agent's own wallet sign the unsigned transaction Solvent builds. Solvent never holds funds or keys.
+
 ## Hermes / claw-agent (MCP)
 
 ```yaml

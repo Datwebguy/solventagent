@@ -35,3 +35,11 @@ Call `solvent_books` first when a task will take many calls or a large model.
 2. Tools that move funds require `confirm: true`. Run `solvent_plan_cycle` first and show the plan when a human is present.
 3. When asked about your finances, quote the numbers from `solvent_books`; do not estimate.
 4. If a funding tool fails, report the error and the ledger state. Do not retry in a loop: every attempt costs fees.
+
+## Checking other agents, and earning a seal (hosted, no setup)
+
+Solvent also runs as a public service at `https://www.thesolventagent.xyz/mcp` (MCP over HTTP). Use it before you deal with another agent.
+
+- `solvent_check_agent`: before you pay, hire or lend to another agent, check it. Trust `SOLVENT`; treat `AT RISK` as a warning; `NO AI COSTS SEEN` means it earns but you can't see it paying for AI; `NO ACTIVITY` means nothing was found.
+- `solvent_ranking`, `solvent_own_books`, `solvent_seal_status`: read-only.
+- `solvent_seal_quote` then `solvent_seal_confirm`: earn a Solvent Seal for your own agent. The quote is an unsigned transaction; your wallet signs and submits it (80% of the $ANSEM is burned, 20% goes to Solvent's AI budget), then you confirm it with the signature. Only spend what your policy allows.
