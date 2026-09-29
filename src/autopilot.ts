@@ -11,7 +11,8 @@ import { head, list, put } from "@vercel/blob";
 import { env } from "./config.js";
 import { verifyChain, type Entry } from "./ledger.js";
 import { Policy } from "./policy.js";
-import { PUBLIC_PREFIX } from "./publish.js";
+// Kept here (not imported from publish.ts) so the modules do not import each other in a loop.
+const PUBLIC_PREFIX = "solvent/";
 import { SEALS_PREFIX, type SealRecord } from "./seal.js";
 
 export const STATE_BLOB = `${PUBLIC_PREFIX}state/treasurer.json`;
