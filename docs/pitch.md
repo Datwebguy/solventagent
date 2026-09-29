@@ -1,6 +1,6 @@
 # Solvent — stream pitch and demo script (15 minutes)
 
-Live site: https://agentsolvent.vercel.app · Code: https://github.com/Datwebguy/solventagent
+Live site: https://www.thesolventagent.xyz · Code: https://github.com/Datwebguy/solventagent
 
 The judges ask four things. Each section below answers one. Times are targets.
 
