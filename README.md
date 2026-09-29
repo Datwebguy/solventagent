@@ -48,7 +48,7 @@ npm run cli cycle --yes              # execute
 npm run cli topup:ansem 10 --yes     # pay for thinking with 10 $ANSEM
 ```
 
-In the server, the cycle runs hourly and only executes when `SOLVENT_AUTOPILOT=1`.
+In the server, the cycle runs hourly and only executes when `SOLVENT_AUTOPILOT=1` (see Autopilot below).
 
 Income detection: every ClawPump fee payout sends 12.5% to ClawPump's buyback wallet (`CgzAtK78…`) in the same transaction, so inflows carrying that leg are booked as income. Plain transfers are booked as capital, not income.
 
@@ -107,13 +107,25 @@ While these run, don't also publish from `npm run cli` or the local server: thos
 
 The ranking takes about 25 minutes to build, too long for a Vercel function, so it runs on GitHub Actions twice a day (`.github/workflows/ranking.yml`). Before a demo, start it by hand from the Actions tab. The site shows when it was last updated.
 
-## Docker
+## Autopilot: Solvent runs its own treasury
+
+Run `src/server.ts` on any always-on machine and Solvent looks after itself, hourly, inside the published caps ($5 per payment, $10 per day):
+
+- books new token income and paid-report sales, and splits income by the published rules;
+- tops up its AI budget from SOL, buys the $ANSEM reserve, buys back its token, and anchors its record on-chain;
+- turns the 20% $ANSEM share of every Solvent Seal into AI budget (booked as income and as a top-up);
+- publishes the books every few minutes, and saves its state to storage so a replacement machine carries on.
+
+On a fresh machine it starts from the published books (the record is checked link by link first), and while it is publishing, the timers on Vercel and GitHub stand down by themselves (one writer at a time). If the server stops for three hours, the timers take over again.
 
 ```bash
 docker build -t solvent .
-docker run -d --env-file .env -e SOLVENT_PROXY_KEY=<24+ chars> \
-  -v "$PWD/data:/data" -v "$PWD/solvent.policy.json:/app/solvent.policy.json" -p 8787:8787 solvent
+docker run -d --restart unless-stopped --name solvent --env-file /root/solvent.env -v solvent-data:/data solvent
 ```
+
+`/root/solvent.env` holds one `NAME=value` per line (`chmod 600` it): `SOLVENT_TREASURY_SECRET`, `SOLVENT_TREASURY_ADDRESS`, `USEPOD_API_TOKEN`, `USEPOD_DEPOSIT_CODE`, `BLOB_READ_WRITE_TOKEN`, `SOLVENT_PUBLISH=1`, `SOLVENT_PROXY_HOST=127.0.0.1` (keeps the proxy private; no port is opened) and, when ready, `SOLVENT_AUTOPILOT=1`.
+
+Start it without `SOLVENT_AUTOPILOT=1` first: it logs what it would do and moves nothing. Turn autopilot on once the plan looks right. The key lives only in that machine's environment, never in git or the image. Keep only what Solvent needs in the treasury wallet: the caps limit each payment, not the balance.
 
 ## Tests
 

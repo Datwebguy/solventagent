@@ -1,7 +1,8 @@
 import { existsSync } from "node:fs";
 import { serve } from "@hono/node-server";
+import { bootstrapFromPublished, saveStateToBlob, writeHeartbeat } from "./autopilot.js";
 import { env } from "./config.js";
-import { runCycle } from "./cycle.js";
+import { readState, runCycle } from "./cycle.js";
 import { FileLedger } from "./ledger.js";
 import { ReserveMeter } from "./meter.js";
 import { createProxy } from "./proxy.js";
@@ -19,14 +20,23 @@ if (!LOOPBACK.has(env.SOLVENT_PROXY_HOST) && !env.SOLVENT_PROXY_KEY) {
   process.exit(1);
 }
 
+const log = (s: string) => console.log(`[${new Date().toISOString()}] ${s}`);
+log(`Autopilot: ${env.SOLVENT_AUTOPILOT ? "ON: moves funds within the published caps" : "off: plans only, moves nothing"}`);
+
+// On a fresh machine, start from the published books so the record stays one unbroken chain.
+try {
+  await bootstrapFromPublished(log);
+} catch (err) {
+  console.error(err instanceof Error ? err.message : err);
+  process.exit(1);
+}
+
 const token = env.USEPOD_API_TOKEN;
 const ledger = new FileLedger();
 const meter = new ReserveMeter(() => tokenBalanceMicros(token));
 const reserve = await meter.init();
 
 const app = createProxy({ apiToken: token, ledger, meter, proxyKey: env.SOLVENT_PROXY_KEY });
-
-const log = (s: string) => console.log(`[${new Date().toISOString()}] ${s}`);
 
 // Pick up outside top-ups and any spend the per-call attribution missed.
 setInterval(() => {
@@ -50,6 +60,7 @@ if (env.BLOB_READ_WRITE_TOKEN && env.SOLVENT_PUBLISH) {
   let lastAt = 0;
   const tick = async () => {
     try {
+      await writeHeartbeat().catch((err) => log(`heartbeat failed: ${err instanceof Error ? err.message : err}`));
       const sales = await ingestInbox(ledger);
       if (sales) log(`booked ${sales} paid audit sale(s)`);
       const head = ledger.head()?.hash;
@@ -71,7 +82,8 @@ if (existsSync("solvent.policy.json")) {
   const cycle = async () => {
     try {
       const r = await runCycle({ execute: env.SOLVENT_AUTOPILOT, log });
-      for (const t of r.txs) if (t.kind === "compute_topup") await meter.resync();
+      for (const t of r.txs) if (t.kind === "compute_topup" || t.kind === "seal_share") await meter.resync();
+      if (env.BLOB_READ_WRITE_TOKEN && env.SOLVENT_PUBLISH) await saveStateToBlob(readState());
     } catch (err) {
       log(`cycle failed: ${err instanceof Error ? err.message : err}`);
     }
