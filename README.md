@@ -120,14 +120,10 @@ On a fresh machine it starts from the published books (the record is checked lin
 
 ```bash
 docker build -t solvent .
-docker run -d --restart unless-stopped --name solvent \
-  -e SOLVENT_TREASURY_SECRET=<the treasury wallet key> \
-  -e USEPOD_API_TOKEN=<...> -e USEPOD_DEPOSIT_CODE=<...> \
-  -e BLOB_READ_WRITE_TOKEN=<...> -e SOLVENT_PUBLISH=1 \
-  -e SOLVENT_TREASURY_ADDRESS=<the treasury wallet address> \
-  -e SOLVENT_AUTOPILOT=1 \
-  -v solvent-data:/data solvent
+docker run -d --restart unless-stopped --name solvent --env-file /root/solvent.env -v solvent-data:/data solvent
 ```
+
+`/root/solvent.env` holds one `NAME=value` per line (`chmod 600` it): `SOLVENT_TREASURY_SECRET`, `SOLVENT_TREASURY_ADDRESS`, `USEPOD_API_TOKEN`, `USEPOD_DEPOSIT_CODE`, `BLOB_READ_WRITE_TOKEN`, `SOLVENT_QUOTE_SECRET`, `SOLVENT_PUBLISH=1`, `SOLVENT_PROXY_HOST=127.0.0.1` (keeps the proxy private; no port is opened) and, when ready, `SOLVENT_AUTOPILOT=1`.
 
 Start it without `SOLVENT_AUTOPILOT=1` first: it logs what it would do and moves nothing. Turn autopilot on once the plan looks right. The key lives only in that machine's environment, never in git or the image. Keep only what Solvent needs in the treasury wallet: the caps limit each payment, not the balance.
 
