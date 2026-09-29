@@ -435,3 +435,5 @@
   .seal-panel .out { margin-top: 10px; font-size: 14px; }
   .seal-panel .ok { color: var(--good-text); } .seal-panel .err { color: #ff8a8a; }
   .lede:empty { display: none; }
+  .kpis.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  @media (max-width: 960px) { .kpis.three { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
