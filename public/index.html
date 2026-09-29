@@ -590,9 +590,23 @@ function aiTag(a) {
   if (a.status === "AT RISK") return `<span class="ai-tag warning">Pays more for AI than it earns</span>`;
   return "";
 }
+let sealMap = {}, sealBurned = 0;
+const TIER_LABEL = { bronze: "Bronze", silver: "Silver", gold: "Gold" };
+// A seal is lit while the agent is earning and not paying more for AI than it earns.
+function sealTag(e) {
+  const s = sealMap[e.payoutWallet];
+  if (!s) return "";
+  const a = e.audit;
+  const lit = !!a && a.status !== "AT RISK" && a.status !== "NO ACTIVITY" && a.feeIncome.last7dUsd > 0;
+  return lit ? `<span class="seal ${esc(s.tier)}">${esc(TIER_LABEL[s.tier] || "")} seal</span>` : "";
+}
 async function loadRanking() {
   try {
-    const r = await fetch("/api/solvency-index", { cache: "no-store" });
+    const [r, sealsRes] = await Promise.all([
+      fetch("/api/solvency-index", { cache: "no-store" }),
+      fetch("/api/seals").then((x) => (x.ok ? x.json() : null)).catch(() => null),
+    ]);
+    sealMap = sealsRes?.seals ?? {}; sealBurned = sealsRes?.burned ?? 0;
     if (!r.ok) throw new Error("not ready");
     const idx = await r.json();
     ranking = idx.entries.filter((e) => e.audit && e.payoutWallet && e.audit.feeIncome.avgPerDayUsd > 0).sort((x, y) => y.audit.feeIncome.avgPerDayUsd - x.audit.feeIncome.avgPerDayUsd);
@@ -600,7 +614,7 @@ async function loadRanking() {
     const medal = ["1st", "2nd", "3rd"];
     $("podium").innerHTML = ranking.slice(0, 3).map((e, i) => `<div class="card pod">
       <div class="top"><span class="medal">${medal[i]}</span><a href="https://clawpump.tech/tokens/${esc(e.mint)}" target="_blank" rel="noopener" style="font-size:13px">Token page ↗</a></div>
-      <div class="name" title="${esc(e.name)}"><a href="/agent/${esc(e.payoutWallet)}" style="color:inherit">${esc(e.name)}</a>${e.ticker ? ` <span class="ticker">$${esc(e.ticker)}</span>` : ""}</div>
+      <div class="name" title="${esc(e.name)}"><a href="/agent/${esc(e.payoutWallet)}" style="color:inherit">${esc(e.name)}</a>${e.ticker ? ` <span class="ticker">$${esc(e.ticker)}</span>` : ""}</div>${sealTag(e)}
       <div class="big">${esc(money(e.audit.feeIncome.avgPerDayUsd))}<small> a day</small></div>
       <div class="sub">${esc(money(e.audit.feeIncome.last7dUsd))} in the last 7 days</div>
       ${aiTag(e.audit)}
@@ -611,13 +625,13 @@ async function loadRanking() {
       const v = e.audit.feeIncome.avgPerDayUsd;
       return `<div class="rrow" onclick="if (window.innerWidth <= 640 && !event.target.closest('a,button')) location.href='/agent/${esc(e.payoutWallet)}'" style="cursor:pointer" data-tip-title="${esc(e.name)}" data-tip="Earns ${esc(money(v))} a day, ${esc(money(e.audit.feeIncome.last7dUsd))} in the last 7 days">
         <span class="rk">${i + 4}</span>
-        <div class="nm"><a href="/agent/${esc(e.payoutWallet)}">${esc(e.name)}</a>${e.ticker ? `<span class="ticker">$${esc(e.ticker)}</span>` : ""}${aiTag(e.audit)}<div class="bar" style="width:${Math.max(0.6, (v / max) * 100)}%"></div></div>
+        <div class="nm"><a href="/agent/${esc(e.payoutWallet)}">${esc(e.name)}</a>${e.ticker ? `<span class="ticker">$${esc(e.ticker)}</span>` : ""}${aiTag(e.audit)}${sealTag(e)}<div class="bar" style="width:${Math.max(0.6, (v / max) * 100)}%"></div></div>
         <div class="v"><b>${esc(money(v))}</b><span>a day</span></div>
         <div class="go"><button class="btn btn-ghost btn-sm" type="button" data-check="${esc(e.payoutWallet)}" data-name="${esc(e.name)}">Check</button></div>
       </div>`;
     }).join("") : `<div class="muted" style="padding:14px 0">Only the top three have earnings so far.</div>`;
     const paying = ranking.filter((e) => e.audit.aiSpend?.payments > 0).length;
-    $("rankNote").textContent = `Updated ${ago(idx.generatedAt)}.`;
+    $("rankNote").textContent = `Updated ${ago(idx.generatedAt)}.${sealBurned > 0 ? ` ${count(sealBurned)} $ANSEM burned by agents.` : ""}`;
     $("quick").innerHTML = `<span>Try:</span>` + ranking.slice(0, 3).map((e) => `<button type="button" data-check="${esc(e.payoutWallet)}" data-name="${esc(e.name)}">${esc(e.name)}</button>`).join("");
   } catch {
     $("rankList").innerHTML = `<div class="muted" style="padding:14px 0">The ranking is being updated. Please check back soon.</div>`;

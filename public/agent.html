@@ -74,10 +74,21 @@
         <span class="eyebrow"><span class="live-dot" aria-hidden="true"></span>Public books · from blockchain records</span>
         <h1 class="agent-name" id="agentName">Loading this agent…</h1>
         <div class="addr" id="addr"></div>
+        <div id="sealRow"></div>
         <p class="lede" style="margin-top:16px" id="lede">We're reading this agent's public records: what it earns from its token and what it spends on AI.</p>
         <div class="head-actions">
           <button class="btn btn-primary" id="shareBtn" type="button">Copy link to this page</button>
           <a class="btn btn-ghost" id="walletLink" href="#" target="_blank" rel="noopener">View wallet ↗</a>
+          <button class="btn btn-ghost" id="sealBtn" type="button">Get the seal</button>
+        </div>
+        <div class="card seal-panel" id="sealPanel" hidden>
+          <div class="tiers" role="group" aria-label="Choose a seal">
+            <button class="tier bronze" type="button" data-tier="bronze"><b>Bronze</b><span>1 $ANSEM</span></button>
+            <button class="tier silver" type="button" data-tier="silver"><b>Silver</b><span>10 $ANSEM</span></button>
+            <button class="tier gold" type="button" data-tier="gold"><b>Gold</b><span>50 $ANSEM</span></button>
+          </div>
+          <p class="footnote">80% is burned, 20% funds Solvent's AI. Paid by this agent's own wallet.</p>
+          <div class="out" id="sealOut" aria-live="polite"></div>
         </div>
       </div>
       <aside class="card health" aria-labelledby="healthTitle">
@@ -156,6 +167,8 @@
 </footer>
 <div class="toasts" id="toasts" aria-live="polite"></div>
 
+<script src="/wallet-icons.js"></script>
+<script src="/wallet.js"></script>
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -205,6 +218,73 @@ const STATUS = {
 const wallet = decodeURIComponent(location.pathname.split("/").filter(Boolean)[1] || "");
 const valid = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(wallet);
 
+// ---------- the seal ----------
+const RPC = "https://solana-rpc.publicnode.com";
+let connected = null;
+let web3Promise;
+function loadWeb3() {
+  return (web3Promise ??= new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = "https://cdn.jsdelivr.net/npm/@solana/web3.js@1.98.4/lib/index.iife.min.js";
+    s.onload = () => resolve(window.solanaWeb3);
+    s.onerror = () => { web3Promise = undefined; reject(new Error("Couldn't load the wallet tools. Check your connection and try again.")); };
+    document.head.appendChild(s);
+  }));
+}
+function friendly(err) {
+  const m = String(err?.message || err || "");
+  if (err?.closed) return "No wallet connected. Nothing was sent.";
+  if (err?.code === 4001 || /reject|cancel|denied|declined/i.test(m)) return "You cancelled in your wallet. Nothing was sent.";
+  if (/insufficient|debit/i.test(m)) return "Your wallet doesn't have enough funds for this.";
+  return m || "Something went wrong. Please try again.";
+}
+const TIER_NAME = { bronze: "Bronze", silver: "Silver", gold: "Gold" };
+// A seal is lit while the agent is earning and not paying more for AI than it earns.
+const sealLit = (a) => !!a && a.status !== "AT RISK" && a.status !== "NO ACTIVITY" && a.feeIncome.last7dUsd > 0;
+function renderSeal(record, audit) {
+  const row = $("sealRow");
+  if (!record) { row.innerHTML = ""; return; }
+  row.innerHTML = sealLit(audit)
+    ? `<span class="seal ${esc(record.tier)}" title="Burned $ANSEM to earn this seal. It stays lit while the agent keeps earning.">${esc(TIER_NAME[record.tier] || "")} seal</span>`
+    : `<span class="seal off" title="The agent has stopped earning, so its seal is switched off.">Seal off</span>`;
+}
+$("sealBtn").onclick = () => { $("sealPanel").hidden = !$("sealPanel").hidden; };
+async function buySeal(tier) {
+  const out = $("sealOut");
+  const buttons = [...document.querySelectorAll("#sealPanel .tier")];
+  buttons.forEach((b) => (b.disabled = true));
+  out.textContent = "";
+  try {
+    connected = connected ?? (await SolWallet.pick());
+    if (connected.address !== wallet) {
+      const name = connected.name;
+      try { await connected.disconnect(); } catch {}
+      connected = null;
+      throw new Error(`Connect this agent's own wallet (${wallet.slice(0, 4)}…${wallet.slice(-4)}) in ${name}. Only that wallet can get its seal.`);
+    }
+    out.textContent = "Approve in your wallet…";
+    const [r, web3] = await Promise.all([fetch(`/api/seal?wallet=${encodeURIComponent(wallet)}&tier=${tier}`, { method: "POST" }), loadWeb3()]);
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || "Couldn't prepare the transaction. Please try again.");
+    const tx = web3.Transaction.from(Uint8Array.from(atob(j.transaction), (ch) => ch.charCodeAt(0)));
+    const conn = new web3.Connection(RPC, "confirmed");
+    const signature = await connected.signAndSend(tx, web3, conn);
+    out.textContent = "Confirming on Solana…";
+    await conn.confirmTransaction(signature, "confirmed");
+    const c = await fetch("/api/seal-confirm", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ wallet, signature }) });
+    const cj = await c.json();
+    if (!c.ok) throw new Error((cj.error || "We couldn't confirm the payment.") + ` Your transaction: ${txUrl(signature)}`);
+    out.innerHTML = `<span class="ok">Sealed. ${esc(count(j.burn))} $ANSEM burned.</span> <a href="${txUrl(signature)}" target="_blank" rel="noopener">View proof ↗</a>`;
+    toast("Seal earned.");
+    renderSeal({ tier: cj.tier }, lastAudit);
+    $("sealPanel").hidden = false;
+  } catch (e) {
+    out.innerHTML = `<span class="err">${esc(friendly(e))}</span>`;
+  } finally { buttons.forEach((b) => (b.disabled = false)); }
+}
+let lastAudit = null;
+document.querySelectorAll("#sealPanel .tier").forEach((b) => (b.onclick = () => buySeal(b.dataset.tier)));
+
 $("shareBtn").onclick = async () => {
   try { await navigator.clipboard.writeText(location.href); toast("Link copied. Share it anywhere."); }
   catch { toast(location.href); }
@@ -225,10 +305,11 @@ async function load() {
   }
   $("addr").textContent = wallet;
   $("walletLink").href = `https://solscan.io/account/${wallet}`;
-  const [auditRes, idxRes, booksRes] = await Promise.allSettled([
+  const [auditRes, idxRes, booksRes, sealsRes] = await Promise.allSettled([
     fetch(`/api/audit?wallet=${encodeURIComponent(wallet)}`).then((r) => (r.ok ? r.json() : Promise.reject(r))),
     fetch("/api/solvency-index").then((r) => (r.ok ? r.json() : null)),
     fetch("/api/books").then((r) => (r.ok ? r.json() : null)),
+    fetch("/api/seals").then((r) => (r.ok ? r.json() : null)),
   ]);
   const known = idxRes.status === "fulfilled" && idxRes.value ? idxRes.value.entries.find((e) => e.payoutWallet === wallet) : null;
   const isSolvent = booksRes.status === "fulfilled" && booksRes.value?.agent?.wallet === wallet;
@@ -242,6 +323,8 @@ async function load() {
     return;
   }
   const a = auditRes.value;
+  lastAudit = a;
+  renderSeal(sealsRes.status === "fulfilled" ? sealsRes.value?.seals?.[wallet] : null, a);
   const st = STATUS[a.status] || STATUS["NO ACTIVITY"];
   $("statusChip").className = `status-chip ${st.cls}`;
   $("statusIcon").innerHTML = st.icon;
