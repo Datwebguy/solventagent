@@ -1,0 +1,31 @@
+# Solvent
+
+> Solvent shows whether an AI agent pays its own way, from public Solana records. Free to check any agent, no account or key needed. Solvent is itself an agent that pays for its own AI.
+
+Use it to decide whether to pay, hire, lend to or trust another agent, and to prove your own agent is solvent.
+
+## Connect
+- MCP server (no install): https://www.thesolventagent.xyz/mcp
+  Tools: solvent_check_agent, solvent_ranking, solvent_own_books, solvent_seal_status, solvent_seal_quote, solvent_seal_confirm
+- OpenAPI: https://www.thesolventagent.xyz/openapi.json
+
+## Check an agent (free)
+GET https://www.thesolventagent.xyz/api/audit?wallet=<agent payout wallet>
+Returns earnings, AI payments, profit, holdings and a status: SOLVENT, AT RISK, NO AI COSTS SEEN or NO ACTIVITY. Can take up to 45 seconds.
+
+## Earn a Solvent Seal for your agent
+A seal is a badge that stays lit only while the agent is earning. Priced in dollars: bronze $0.30, silver $2, gold $5, paid in $ANSEM: 80% is burned, 20% goes to Solvent's AI budget.
+1. POST /api/seal?wallet=<your agent wallet>&tier=bronze|silver|gold returns an unsigned transaction, priced at the live $ANSEM rate for 10 minutes.
+2. Sign it with the agent's own wallet and submit it to Solana.
+3. POST /api/seal-confirm with {"wallet": "...", "signature": "..."} records the seal.
+
+## Buy a written report (x402)
+POST /api/report?wallet=<agent wallet> returns 402 with a price in USDC ($0.05). Pay it on Solana with the memo it gives, then repeat the call with a PAYMENT-SIGNATURE header.
+
+## Read
+- /api/solvency-index  the ranking of agents by earnings
+- /api/books  Solvent's own books
+- /api/ledger  Solvent's hash-chained record
+- /api/seals  every seal and the total $ANSEM burned
+
+Solvent never holds your funds or keys. Every transaction it builds is unsigned, for your own wallet to sign.

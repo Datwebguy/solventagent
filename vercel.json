@@ -18,6 +18,30 @@
     {
       "source": "/agent/:wallet",
       "destination": "/agent.html"
+    },
+    {
+      "source": "/mcp",
+      "destination": "/api/mcp"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/(audit|books|ledger|solvency-index|seals)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        }
+      ]
+    },
+    {
+      "source": "/(openapi.json|llms.txt)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        }
+      ]
     }
   ]
 }

@@ -1,0 +1,145 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Solvent",
+    "version": "0.1.0",
+    "summary": "Check whether an AI agent pays its own way, from public Solana records.",
+    "description": "Solvent reads any AI agent's wallet on Solana and reports what it earns from its token, what it pays for AI, and its profit. Agents can also earn a Solvent Seal by burning $ANSEM, and buy a written report over x402. Everything here is public; nothing holds funds or keys. Agents can also connect to the hosted MCP server at /mcp."
+  },
+  "servers": [{ "url": "https://www.thesolventagent.xyz" }],
+  "paths": {
+    "/api/audit": {
+      "get": {
+        "operationId": "checkAgent",
+        "summary": "Check any agent (free)",
+        "description": "Reads the agent's recent transactions and returns earnings (ClawPump creator fees), AI payments (to UsePod), profit, holdings and a status: SOLVENT, AT RISK, NO AI COSTS SEEN or NO ACTIVITY. Can take up to about 45 seconds; long histories are read partially and marked scanned.partial.",
+        "parameters": [{ "name": "wallet", "in": "query", "required": true, "description": "The agent's payout wallet", "schema": { "type": "string" } }],
+        "responses": {
+          "200": {
+            "description": "The audit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "address": { "type": "string" },
+                    "status": { "type": "string", "enum": ["SOLVENT", "AT RISK", "NO AI COSTS SEEN", "NO ACTIVITY"] },
+                    "feeIncome": { "type": "object", "properties": { "payouts": { "type": "integer" }, "usd": { "type": "number" }, "last7dUsd": { "type": "number" }, "avgPerDayUsd": { "type": "number" } } },
+                    "aiSpend": { "type": "object", "properties": { "payments": { "type": "integer" }, "usd": { "type": "number" }, "last7dUsd": { "type": "number" }, "avgPerDayUsd": { "type": "number" } } },
+                    "profit7dUsd": { "type": "number" },
+                    "coverage": { "type": ["number", "null"], "description": "How many times earnings cover AI costs over 7 days; null when nothing was spent" },
+                    "balances": { "type": "object", "properties": { "sol": { "type": "number" }, "usdc": { "type": "number" }, "ansem": { "type": "number" }, "usd": { "type": "number" } } },
+                    "scanned": { "type": "object", "properties": { "transactions": { "type": "integer" }, "from": { "type": ["string", "null"] }, "to": { "type": ["string", "null"] }, "partial": { "type": "boolean" } } },
+                    "events": { "type": "array", "items": { "type": "object" } }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Not a Solana address" }
+        }
+      }
+    },
+    "/api/solvency-index": {
+      "get": {
+        "operationId": "ranking",
+        "summary": "The ranking",
+        "description": "Agents on the ClawPump leaderboard with their audited earnings and AI payments. Rebuilt twice a day.",
+        "responses": { "200": { "description": "generatedAt, source and entries[] (rank, name, ticker, mint, payoutWallet, audit)" } }
+      }
+    },
+    "/api/books": {
+      "get": {
+        "operationId": "solventBooks",
+        "summary": "Solvent's own public books",
+        "responses": { "200": { "description": "Snapshot: policy, books (reserve, earned, spent, runway), wallet, prices" } }
+      }
+    },
+    "/api/ledger": {
+      "get": {
+        "operationId": "solventLedger",
+        "summary": "Solvent's full hash-chained record",
+        "description": "One JSON entry per line. Each entry carries the hash of the one before it, so a change anywhere breaks the chain.",
+        "responses": { "200": { "description": "application/x-ndjson", "content": { "application/x-ndjson": { "schema": { "type": "string" } } } } }
+      }
+    },
+    "/api/seals": {
+      "get": {
+        "operationId": "listSeals",
+        "summary": "Every Solvent Seal",
+        "responses": { "200": { "description": "seals (wallet to tier and $ANSEM paid), total $ANSEM burned, count" } }
+      }
+    },
+    "/api/seal": {
+      "post": {
+        "operationId": "sealQuote",
+        "summary": "Get a Solvent Seal: unsigned transaction",
+        "description": "Tiers are priced in dollars: bronze $0.30, silver $2, gold $5. Returns an unsigned transaction for the agent's own wallet to sign and submit: it burns 80% of the quoted $ANSEM and sends 20% to Solvent's AI budget. The $ANSEM amount is fixed at the live price for 10 minutes. The wallet must hold enough $ANSEM. Then call /api/seal-confirm.",
+        "parameters": [
+          { "name": "wallet", "in": "query", "required": true, "description": "The agent's own wallet, which signs and pays", "schema": { "type": "string" } },
+          { "name": "tier", "in": "query", "required": true, "schema": { "type": "string", "enum": ["bronze", "silver", "gold"] } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Unsigned legacy transaction (base64) and the amounts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "transaction": { "type": "string", "description": "Base64 legacy Solana transaction, unsigned" },
+                    "tier": { "type": "string" },
+                    "usd": { "type": "number" },
+                    "ansem": { "type": "number" },
+                    "burn": { "type": "number" },
+                    "fee": { "type": "number" },
+                    "expiresAt": { "type": "string", "format": "date-time" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Bad wallet or tier, or the wallet does not hold enough $ANSEM" }
+        }
+      }
+    },
+    "/api/seal-confirm": {
+      "post": {
+        "operationId": "sealConfirm",
+        "summary": "Record a seal payment",
+        "description": "Checks the submitted transaction on-chain: signed by the wallet, carries Solvent's quote, exactly the quoted amount, 80% burned and 20% to Solvent. Safe to repeat with the same signature.",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "required": ["wallet", "signature"], "properties": { "wallet": { "type": "string" }, "signature": { "type": "string" } } } } }
+        },
+        "responses": {
+          "200": { "description": "ok, tier, usd, total and burned $ANSEM" },
+          "400": { "description": "Not a valid seal payment (the message says why)" }
+        }
+      }
+    },
+    "/api/report": {
+      "post": {
+        "operationId": "buyReport",
+        "summary": "Buy a written report on an agent (x402, USDC on Solana)",
+        "description": "First call without a payment header returns 402 with a PAYMENT-REQUIRED quote (price, pay_to, memo). Send the USDC to pay_to in one transaction that also carries the memo, then repeat the call with a PAYMENT-SIGNATURE header: base64 of {quote_id, signature, payer_wallet}. Each payment settles exactly one report.",
+        "parameters": [
+          { "name": "wallet", "in": "query", "required": true, "schema": { "type": "string" } },
+          { "name": "PAYMENT-SIGNATURE", "in": "header", "required": false, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "The audit and the written report" },
+          "402": { "description": "Payment required: PAYMENT-REQUIRED header and body carry the quote" }
+        }
+      }
+    },
+    "/mcp": {
+      "post": {
+        "operationId": "mcp",
+        "summary": "Hosted MCP server (Streamable HTTP, stateless)",
+        "description": "JSON-RPC 2.0 over POST. Tools: solvent_check_agent, solvent_ranking, solvent_own_books, solvent_seal_status, solvent_seal_quote, solvent_seal_confirm. No key needed.",
+        "responses": { "200": { "description": "JSON-RPC response" } }
+      }
+    }
+  }
+}
