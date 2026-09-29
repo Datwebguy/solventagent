@@ -7,6 +7,5 @@ RUN npm ci --omit=dev && npm install --no-save tsx
 COPY tsconfig.json ./
 COPY src ./src
 ENV SOLVENT_PROXY_HOST=0.0.0.0 SOLVENT_DATA_DIR=/data
-VOLUME ["/data"]
 EXPOSE 8787
 CMD ["npx", "tsx", "src/server.ts"]
