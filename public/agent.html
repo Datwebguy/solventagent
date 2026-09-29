@@ -82,9 +82,9 @@
         </div>
         <div class="card seal-panel" id="sealPanel" hidden>
           <div class="tiers" role="group" aria-label="Choose a seal">
-            <button class="tier bronze" type="button" data-tier="bronze" data-amt="2"><b>Bronze</b><span>2 $ANSEM</span></button>
-            <button class="tier silver" type="button" data-tier="silver" data-amt="14"><b>Silver</b><span>14 $ANSEM</span></button>
-            <button class="tier gold" type="button" data-tier="gold" data-amt="35"><b>Gold</b><span>35 $ANSEM</span></button>
+            <button class="tier bronze" type="button" data-tier="bronze" data-usd="0.3"><b>Bronze</b><span>$0.30</span></button>
+            <button class="tier silver" type="button" data-tier="silver" data-usd="2"><b>Silver</b><span>$2</span></button>
+            <button class="tier gold" type="button" data-tier="gold" data-usd="5"><b>Gold</b><span>$5</span></button>
           </div>
           <p class="footnote">80% is burned, 20% funds Solvent's AI. Paid by this agent's own wallet.</p>
           <div class="out" id="sealOut" aria-live="polite"></div>
@@ -248,6 +248,7 @@ async function buySeal(tier) {
     const [r, web3] = await Promise.all([fetch(`/api/seal?wallet=${encodeURIComponent(wallet)}&tier=${tier}`, { method: "POST" }), loadWeb3()]);
     const j = await r.json();
     if (!r.ok) throw new Error(j.error || "Couldn't prepare the transaction. Please try again.");
+    out.textContent = `Approve in your wallet: ${count(j.ansem)} $ANSEM ($${j.usd}), locked for 10 minutes.`;
     const tx = web3.Transaction.from(Uint8Array.from(atob(j.transaction), (ch) => ch.charCodeAt(0)));
     const conn = new web3.Connection(RPC, "confirmed");
     const signature = await connected.signAndSend(tx, web3, conn);
@@ -307,7 +308,7 @@ async function load() {
   const a = auditRes.value;
   lastAudit = a;
   const px = booksRes.status === "fulfilled" ? booksRes.value?.prices?.ansem : 0;
-  if (px > 0) document.querySelectorAll("#sealPanel .tier").forEach((b) => (b.lastElementChild.textContent = `${b.dataset.amt} $ANSEM · ≈ ${money(b.dataset.amt * px)}`));
+  if (px > 0) document.querySelectorAll("#sealPanel .tier").forEach((b) => (b.lastElementChild.textContent = `${b.lastElementChild.textContent.split(" ")[0]} · ≈ ${count(Math.ceil((b.dataset.usd / px) * 100) / 100)} $ANSEM`));
   renderSeal(sealsRes.status === "fulfilled" ? sealsRes.value?.seals?.[wallet] : null, a);
   const st = STATUS[a.status] || STATUS["NO ACTIVITY"];
   $("statusChip").className = `status-chip ${st.cls}`;

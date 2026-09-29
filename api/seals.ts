@@ -17,7 +17,7 @@ export async function GET(): Promise<Response> {
     const seals: Record<string, { tier: string; total: number }> = {};
     let burned = 0;
     for (const r of rows) {
-      const tier = r ? tierFor(r.total) : null;
+      const tier = r ? tierFor(r.usd ?? 0) : null;
       if (!r || !tier) continue;
       seals[r.wallet] = { tier, total: r.total };
       burned += r.burned;
