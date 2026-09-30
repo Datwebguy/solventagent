@@ -1,4 +1,4 @@
-import { head } from "@vercel/blob";
+import { head } from "../src/store.js";
 
 /** The full hash-chained ledger (JSON lines). The dashboard re-verifies the chain in the browser. */
 export async function GET(): Promise<Response> {

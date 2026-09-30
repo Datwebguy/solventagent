@@ -1,4 +1,4 @@
-import { head, list, put } from "@vercel/blob";
+import { head, list, put } from "./store.js";
 import { env } from "./config.js";
 import { addPayment, SEALS_PREFIX, tierFor, verifySealTx, type SealRecord } from "./seal.js";
 import { getParsedTx } from "./solana.js";

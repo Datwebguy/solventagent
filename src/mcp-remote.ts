@@ -4,7 +4,7 @@
  * It is served at /mcp by api/mcp.ts. Everything here is public data; nothing moves funds. The
  * only transaction it builds is unsigned, for the agent to sign with its own wallet.
  */
-import { head } from "@vercel/blob";
+import { head } from "./store.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { PublicKey } from "@solana/web3.js";
 import { z } from "zod";

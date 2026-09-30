@@ -3,7 +3,7 @@ import { Keypair } from "@solana/web3.js";
 import { auditWallet } from "./audit.js";
 import { books } from "./books.js";
 import { buyReport } from "./buy.js";
-import { put } from "@vercel/blob";
+import { put } from "./store.js";
 import { ingestInbox, publish } from "./publish.js";
 import { buildSolvencyIndex, type SolvencyIndex } from "./solvency-index.js";
 import { env, MINTS } from "./config.js";

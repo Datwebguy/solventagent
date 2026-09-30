@@ -1,4 +1,4 @@
-import { del, list, put } from "@vercel/blob";
+import { del, list, put } from "./store.js";
 import { books, type Books } from "./books.js";
 import { env, MINTS } from "./config.js";
 import { loadPolicy } from "./cycle.js";
