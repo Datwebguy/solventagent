@@ -1,34 +1,22 @@
-# Rebuilds the earnings ranking from public blockchain records twice a day and
-# publishes it for the website. Read-only: it never sends a transaction.
-name: Refresh the ranking
-
+name: Move storage to Cloudflare R2
+# Run once by hand after adding the R2_* secrets. Copies the books, ledger, ranking, seals and
+# state from Vercel Blob to R2. Safe to run again.
 on:
-  schedule:
-    # Twice a day: GitHub sometimes skips a scheduled run when it is busy.
-    - cron: "23 3,15 * * *"
   workflow_dispatch:
 
-concurrency:
-  group: ranking
-  cancel-in-progress: false
-
-permissions:
-  contents: read
-
 jobs:
-  rank:
+  move:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 22
           cache: npm
       - run: npm ci --no-audit --no-fund
-      - run: npx tsx src/cli.ts index:build 40
+      - run: npx tsx scripts/move-to-r2.ts
         env:
-          SOLVENT_PUBLISH: "1"
           BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}

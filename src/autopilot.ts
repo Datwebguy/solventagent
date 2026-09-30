@@ -7,7 +7,7 @@
  */
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { head, list, put } from "@vercel/blob";
+import { head, list, put } from "./store.js";
 import { env } from "./config.js";
 import { verifyChain, type Entry } from "./ledger.js";
 import { Policy } from "./policy.js";

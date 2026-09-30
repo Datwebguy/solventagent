@@ -12,7 +12,7 @@
  */
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { del, head, put } from "@vercel/blob";
+import { del, head, put } from "./store.js";
 import { env } from "./config.js";
 import { readState, runCycle, writeState } from "./cycle.js";
 import { FileLedger, verifyChain, type Entry } from "./ledger.js";

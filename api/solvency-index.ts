@@ -1,4 +1,4 @@
-import { head } from "@vercel/blob";
+import { head } from "../src/store.js";
 
 /** The Solvency Index, rebuilt from the chain by the runtime. */
 export async function GET(): Promise<Response> {

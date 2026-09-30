@@ -1,4 +1,4 @@
-import { head, put } from "@vercel/blob";
+import { head, put } from "../src/store.js";
 import { PublicKey } from "@solana/web3.js";
 import { auditWallet } from "../src/audit.js";
 import { env } from "../src/config.js";

@@ -1,5 +1,5 @@
 import { PublicKey } from "@solana/web3.js";
-import { head } from "@vercel/blob";
+import { head } from "../src/store.js";
 import { env } from "../src/config.js";
 import { findPayoutWallet } from "../src/solvency-index.js";
 import { checkToken, readBondingCurve } from "../src/token-check.js";

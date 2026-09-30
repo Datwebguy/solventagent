@@ -1,4 +1,4 @@
-import { head } from "@vercel/blob";
+import { head } from "../src/store.js";
 
 /** Latest public snapshot of the agent's books, published by the runtime. */
 export async function GET(): Promise<Response> {

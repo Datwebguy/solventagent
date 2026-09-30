@@ -53,6 +53,11 @@ const Env = z.object({
 export type Env = z.infer<typeof Env>;
 
 export const env: Env = Env.parse(process.env);
+// Storage is Cloudflare R2 when its settings are present (see src/store.ts). The rest of the code
+// only asks whether storage is configured, so mark it as such.
+if (!env.BLOB_READ_WRITE_TOKEN && process.env.R2_ACCOUNT_ID && process.env.R2_ACCESS_KEY_ID && process.env.R2_SECRET_ACCESS_KEY && process.env.R2_BUCKET && process.env.R2_PUBLIC_URL) {
+  env.BLOB_READ_WRITE_TOKEN = "r2";
+}
 
 export const MINTS = {
   USDC: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
