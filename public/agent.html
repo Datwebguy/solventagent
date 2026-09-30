@@ -220,10 +220,11 @@ const TIER_NAME = { bronze: "Bronze", silver: "Silver", gold: "Gold" };
 const sealLit = (a) => !!a && a.status !== "AT RISK" && a.status !== "NO ACTIVITY" && a.feeIncome.last7dUsd > 0;
 function renderSeal(record, audit) {
   const row = $("sealRow");
-  if (!record) { row.innerHTML = ""; return; }
-  row.innerHTML = sealLit(audit)
+  const holder = audit?.solvent?.holder ? ` <span class="seal holder" title="This wallet holds $SOLVENT">$SOLVENT holder</span>` : "";
+  if (!record) { row.innerHTML = holder; return; }
+  row.innerHTML = holder + (sealLit(audit)
     ? `<span class="seal ${esc(record.tier)}" title="Burned $ANSEM to earn this seal. It stays lit while the agent keeps earning.">${esc(TIER_NAME[record.tier] || "")} seal</span>`
-    : `<span class="seal off" title="The agent has stopped earning, so its seal is switched off.">Seal off</span>`;
+    : `<span class="seal off" title="The agent has stopped earning, so its seal is switched off.">Seal off</span>`);
 }
 $("sealBtn").onclick = () => { $("sealPanel").hidden = !$("sealPanel").hidden; };
 // Arriving from "Get a seal" on the home page: open the seal options with the chosen tier marked.

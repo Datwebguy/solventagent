@@ -1,5 +1,6 @@
 import { PublicKey } from "@solana/web3.js";
 import { auditWallet } from "../src/audit.js";
+import { isHolder, solventBalance } from "../src/holder.js";
 
 /** Free, read-only audit of any agent wallet: GET /api/audit?wallet=<address> */
 export async function GET(request: Request): Promise<Response> {
@@ -11,8 +12,8 @@ export async function GET(request: Request): Promise<Response> {
   }
   try {
     // Bounded in count and in time (the function limit is 60s), so a slow free RPC gives a partial answer, not a 504.
-    const audit = await auditWallet(wallet, 60, Date.now(), { budgetMs: 48_000 });
-    return Response.json(audit, { headers: { "cache-control": `public, s-maxage=${audit.scanned.partial ? 60 : 300}, stale-while-revalidate=86400` } });
+    const [audit, tokens] = await Promise.all([auditWallet(wallet, 60, Date.now(), { budgetMs: 48_000 }), solventBalance(wallet).catch(() => 0)]);
+    return Response.json({ ...audit, solvent: { tokens, holder: isHolder(tokens) } }, { headers: { "cache-control": `public, s-maxage=${audit.scanned.partial ? 60 : 300}, stale-while-revalidate=86400` } });
   } catch (err) {
     return Response.json({ error: err instanceof Error ? err.message : String(err) }, { status: 502 });
   }

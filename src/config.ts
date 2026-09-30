@@ -39,6 +39,8 @@ const Env = z.object({
   // Public site settings (web side). The treasury address receives paid-audit payments.
   SOLVENT_TREASURY_ADDRESS: z.string().optional(),
   SOLVENT_AUDIT_PRICE_USD: z.coerce.number().positive().default(0.05),
+  /** $SOLVENT a wallet must hold for holder perks (free reports, holder badge). */
+  SOLVENT_HOLDER_MIN: z.coerce.number().positive().default(50_000),
   // HMAC secret that signs paid-audit quotes so they cannot be forged or altered.
   SOLVENT_QUOTE_SECRET: z.string().min(32).optional(),
   // When "1", the hourly treasury cycle executes; otherwise it only plans.

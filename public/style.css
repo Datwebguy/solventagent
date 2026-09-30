@@ -420,6 +420,7 @@
   .buy-label { font-weight: 700; color: var(--brand); white-space: nowrap; }
   .buy-ca code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; color: var(--ink-2); }
   .buy-links { display: flex; flex-wrap: wrap; gap: 8px; }
+  .buy-perks { margin: 2px 0 0; font-size: 13.5px; color: var(--ink-2); }
 
   /* Solvent Seal */
   .seal { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; padding: 5px 12px; border-radius: 999px; font-weight: 700; font-size: 13px; border: 1px solid; }
@@ -427,6 +428,7 @@
   .seal.bronze { color: #e0a46a; background: rgba(205, 127, 50, .14); border-color: rgba(205, 127, 50, .45); }
   .seal.silver { color: #d5dbe4; background: rgba(192, 199, 209, .12); border-color: rgba(192, 199, 209, .4); }
   .seal.gold { color: #f7d060; background: rgba(245, 197, 66, .14); border-color: rgba(245, 197, 66, .5); }
+  .seal.holder { color: #03140c; background: var(--brand); border-color: var(--brand); }
   .seal.off { color: var(--muted); background: var(--surface-2); border-color: var(--hairline-2); }
   .rrow .seal, .pod .seal { margin: 0 0 0 8px; padding: 2px 8px; font-size: 12px; }
   .pod .seal { margin: 6px 0 0; align-self: flex-start; }

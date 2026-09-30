@@ -3,6 +3,7 @@ import { PublicKey } from "@solana/web3.js";
 import { auditWallet } from "../src/audit.js";
 import { env } from "../src/config.js";
 import type { SaleRecord } from "../src/publish.js";
+import { checkHolderRequest, isHolder, solventBalance } from "../src/holder.js";
 import { writeReport } from "../src/report.js";
 import { makeQuoteId, paymentRequired, readQuoteId, SOLANA_MAINNET, verifyPayment } from "../src/sell.js";
 import { connection, getParsedTx } from "../src/solana.js";
@@ -28,6 +29,33 @@ export async function POST(request: Request): Promise<Response> {
   const treasury = env.SOLVENT_TREASURY_ADDRESS;
   const token = env.USEPOD_API_TOKEN;
   if (!secret || !treasury || !token) return Response.json({ error: "paid reports are not configured" }, { status: 503 });
+
+  // $SOLVENT holders get the report free: they sign a short message to prove the wallet is theirs.
+  const holderHeader = request.headers.get("x-solvent-holder");
+  if (holderHeader) {
+    try {
+      const req = JSON.parse(Buffer.from(holderHeader, "base64").toString("utf8")) as { signer: string; agent: string; at: string; signature: string };
+      checkHolderRequest(req, wallet);
+      const tokens = await solventBalance(req.signer);
+      if (!isHolder(tokens)) return Response.json({ error: "this wallet doesn't hold enough $SOLVENT for free reports", tokens }, { status: 403 });
+      // One fresh report per agent per day is shared by all holders, so free reports can't drain the AI budget.
+      const day = new Date().toISOString().slice(0, 10);
+      const cachePath = `solvent/holder-reports/${wallet}-${day}.json`;
+      try {
+        const cached = await head(cachePath);
+        return new Response(await (await fetch(cached.url)).text(), { headers: { "content-type": "application/json" } });
+      } catch {
+        // not written yet today
+      }
+      const audit = await auditWallet(wallet, 60);
+      const report = await writeReport(audit, token);
+      const result = { audit, report, holder: { wallet: req.signer, tokens } };
+      await put(cachePath, JSON.stringify(result), blob);
+      return Response.json(result);
+    } catch (err) {
+      return Response.json({ error: err instanceof Error ? err.message : String(err) }, { status: 403 });
+    }
+  }
 
   const proofHeader = request.headers.get("payment-signature");
   if (!proofHeader) {

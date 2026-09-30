@@ -1,3 +1,4 @@
+import { isHolder, solventBalance } from "./holder.js";
 import { auditWallet, type Audit } from "./audit.js";
 import { CLAWPUMP_BUYBACK_WALLET, CLAWPUMP_PLATFORM_WALLET, isClawPumpPayout } from "./income.js";
 import { getParsedTx } from "./solana.js";
@@ -13,6 +14,8 @@ export interface IndexEntry {
   clawpumpFeesSol: number;
   payoutWallet: string | null;
   audit: Pick<Audit, "feeIncome" | "aiSpend" | "profit7dUsd" | "coverage" | "status" | "thoughtsPerDay" | "scanned"> | null;
+  /** Holds enough $SOLVENT for the holder badge. */
+  solventHolder?: boolean;
   error?: string;
 }
 
@@ -84,9 +87,11 @@ export async function buildSolvencyIndex(
     try {
       const payoutWallet = await findPayoutWallet(row.mint);
       const audit = payoutWallet ? await auditWallet(payoutWallet, 40) : null;
+      const solventHolder = payoutWallet ? isHolder(await solventBalance(payoutWallet).catch(() => 0)) : false;
       entries.push({
         ...row,
         payoutWallet,
+        solventHolder,
         audit: audit
           ? { feeIncome: audit.feeIncome, aiSpend: audit.aiSpend, profit7dUsd: audit.profit7dUsd, coverage: audit.coverage, status: audit.status, thoughtsPerDay: audit.thoughtsPerDay, scanned: audit.scanned }
           : null,
