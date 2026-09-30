@@ -15,6 +15,9 @@ import { depositSol } from "./usepod/pay.js";
 import { convertSealShares } from "./seal-shares.js";
 import { loadTreasury } from "./wallet.js";
 
+const SEAL_CHECK_MS = 6 * 60 * 60_000;
+let lastSealCheck = 0;
+
 /** SOL always left in the wallet for network fees. */
 export const FEE_BUFFER_SOL = 0.02;
 const MIN_ACTION_USD = 0.5;
@@ -173,7 +176,10 @@ export async function runCycle({
   // The 20% $ANSEM share of each Solvent Seal: half becomes AI budget, half buys $SOLVENT.
   let sealSigs = state.sealSigs ?? [];
   try {
-    const shares = await convertSealShares(signer, ledger, sealSigs, log);
+    // Listing the seals is a metered storage call, so new seal payments are picked up every 6 hours.
+    const shares = Date.now() - lastSealCheck >= SEAL_CHECK_MS
+      ? ((lastSealCheck = Date.now()), await convertSealShares(signer, ledger, sealSigs, log))
+      : { done: [], txs: [], failures: [] };
     sealSigs = [...sealSigs, ...shares.done];
     report.txs.push(...shares.txs);
     report.failures.push(...shares.failures);
