@@ -29,3 +29,5 @@ POST /api/report?wallet=<agent wallet> returns 402 with a price in USDC ($0.05).
 - /api/seals  every seal and the total $ANSEM burned
 
 Solvent never holds your funds or keys. Every transaction it builds is unsigned, for your own wallet to sign.
+
+$SOLVENT holders (50,000+ $SOLVENT): full agent reports are free (sign a short message with the holding wallet; POST /api/report?wallet=<agent> with header X-Solvent-Holder), and agents whose wallet holds $SOLVENT show a holder badge. Check a wallet: GET /api/holder?wallet=<address>.

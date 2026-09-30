@@ -66,6 +66,12 @@
         const [out] = await sign.signTransaction({ account, chain: CHAIN, transaction: bytes });
         return connection.sendRawTransaction(out.signedTransaction, { maxRetries: 3 });
       },
+      async signMessage(text) {
+        const f = w.features["solana:signMessage"];
+        if (!f) throw new Error("This wallet can't sign messages. Please pick another wallet.");
+        const [out] = await f.signMessage({ account, message: new TextEncoder().encode(text) });
+        return b58(out.signature);
+      },
       async disconnect() { try { await w.features["standard:disconnect"]?.disconnect(); } catch {} },
     };
   }
@@ -87,6 +93,11 @@
         }
         const signed = await p.signTransaction(tx);
         return connection.sendRawTransaction(signed.serialize(), { maxRetries: 3 });
+      },
+      async signMessage(text) {
+        if (!p.signMessage) throw new Error("This wallet can't sign messages. Please pick another wallet.");
+        const out = await p.signMessage(new TextEncoder().encode(text), "utf8");
+        return b58(out?.signature ?? out);
       },
       async disconnect() { try { await p.disconnect?.(); } catch {} },
     };
@@ -210,7 +221,7 @@
             try {
               const address = await w.connect();
               close();
-              resolve({ name: w.name, address, signAndSend: w.signAndSend, disconnect: w.disconnect });
+              resolve({ name: w.name, address, signAndSend: w.signAndSend, signMessage: w.signMessage, disconnect: w.disconnect });
             } catch (e) {
               close(e);
             }

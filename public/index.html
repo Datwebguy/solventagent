@@ -68,6 +68,7 @@
             <a class="btn btn-ghost btn-sm" href="https://jup.ag/swap/SOL-DXSrhYfkyEdjH2W4QrMTR9vbY4813eyKchyCYbEsf5AL" target="_blank" rel="noopener">Jupiter ↗</a>
             <a class="btn btn-ghost btn-sm" href="https://pump.fun/coin/DXSrhYfkyEdjH2W4QrMTR9vbY4813eyKchyCYbEsf5AL" target="_blank" rel="noopener">pump.fun ↗</a>
           </div>
+          <p class="buy-perks">Hold 50,000+ $SOLVENT: free agent reports and a $SOLVENT holder badge on your agent.</p>
         </div>
       </div>
 
@@ -656,6 +657,7 @@ function sealTag(e) {
   const lit = !!a && a.status !== "AT RISK" && a.status !== "NO ACTIVITY" && a.feeIncome.last7dUsd > 0;
   return lit ? `<span class="seal ${esc(s.tier)}">${esc(TIER_LABEL[s.tier] || "")} seal</span>` : "";
 }
+const holderTag = (e) => (e.solventHolder ? `<span class="seal holder">$SOLVENT holder</span>` : "");
 async function loadRanking() {
   try {
     const [r, sealsRes] = await Promise.all([
@@ -670,7 +672,7 @@ async function loadRanking() {
     const medal = ["1st", "2nd", "3rd"];
     $("podium").innerHTML = ranking.slice(0, 3).map((e, i) => `<div class="card pod">
       <div class="top"><span class="medal">${medal[i]}</span><a href="https://clawpump.tech/tokens/${esc(e.mint)}" target="_blank" rel="noopener" style="font-size:13px">Token page ↗</a></div>
-      <div class="name" title="${esc(e.name)}"><a href="/agent/${esc(e.payoutWallet)}" style="color:inherit">${esc(e.name)}</a>${goodTicker(e.ticker) ? ` <span class="ticker">$${esc(goodTicker(e.ticker))}</span>` : ""}</div>${sealTag(e)}
+      <div class="name" title="${esc(e.name)}"><a href="/agent/${esc(e.payoutWallet)}" style="color:inherit">${esc(e.name)}</a>${goodTicker(e.ticker) ? ` <span class="ticker">$${esc(goodTicker(e.ticker))}</span>` : ""}</div>${sealTag(e)}${holderTag(e)}
       <div class="big">${esc(money(e.audit.feeIncome.avgPerDayUsd))}<small> a day</small></div>
       <div class="sub">${esc(money(e.audit.feeIncome.last7dUsd))} in the last 7 days</div>
       ${aiTag(e.audit)}
@@ -681,7 +683,7 @@ async function loadRanking() {
       const v = e.audit.feeIncome.avgPerDayUsd;
       return `<div class="rrow" onclick="if (window.innerWidth <= 640 && !event.target.closest('a,button')) location.href='/agent/${esc(e.payoutWallet)}'" style="cursor:pointer" data-tip-title="${esc(e.name)}" data-tip="Earns ${esc(money(v))} a day, ${esc(money(e.audit.feeIncome.last7dUsd))} in the last 7 days">
         <span class="rk">${i + 4}</span>
-        <div class="nm"><a href="/agent/${esc(e.payoutWallet)}">${esc(e.name)}</a>${goodTicker(e.ticker) ? `<span class="ticker">$${esc(goodTicker(e.ticker))}</span>` : ""}${aiTag(e.audit)}${sealTag(e)}<div class="bar" style="width:${Math.max(0.6, (v / max) * 100)}%"></div></div>
+        <div class="nm"><a href="/agent/${esc(e.payoutWallet)}">${esc(e.name)}</a>${goodTicker(e.ticker) ? `<span class="ticker">$${esc(goodTicker(e.ticker))}</span>` : ""}${aiTag(e.audit)}${sealTag(e)}${holderTag(e)}<div class="bar" style="width:${Math.max(0.6, (v / max) * 100)}%"></div></div>
         <div class="v"><b>${esc(money(v))}</b><span>a day</span></div>
         <div class="go"><button class="btn btn-ghost btn-sm" type="button" data-check="${esc(e.payoutWallet)}" data-name="${esc(e.name)}">Check</button></div>
       </div>`;
@@ -763,7 +765,7 @@ async function runCheck(name) {
       <div class="cta-row" style="margin-top:12px"><a class="btn btn-ghost btn-sm" href="/agent/${encodeURIComponent(w)}">Open its public page →</a></div>
       <div class="report-cta">
         <div><b>Want the full picture?</b><span>A short written report on this agent's finances. Solvent pays for the AI that writes it.</span></div>
-        <button class="btn btn-primary btn-sm" type="button" id="buyBtn">Get the report · $0.05</button>
+        <button class="btn btn-primary btn-sm" type="button" id="buyBtn">Get the report · $0.05 · free for $SOLVENT holders</button>
       </div>
       <ol class="progress" id="buySteps" hidden><li>Approve the payment in your wallet</li><li>Confirming on Solana</li><li>Solvent is writing your report</li></ol>
       <div class="out" id="reportOut" aria-live="polite"></div>
@@ -797,6 +799,19 @@ async function buyReport() {
   const url = `/api/report?wallet=${encodeURIComponent(lastCheck.wallet)}`;
   try {
     const w = wallet ?? (await connectWallet());
+    // $SOLVENT holders get it free: sign a short message to prove the wallet is yours.
+    const h = await fetch(`/api/holder?wallet=${encodeURIComponent(w.address)}`).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+    if (h?.holder && w.signMessage) {
+      out.textContent = "You hold $SOLVENT, so this one is free. Sign the message in your wallet (no payment).";
+      const at = new Date().toISOString();
+      const signature = await w.signMessage(`Solvent holder report\nAgent: ${lastCheck.wallet}\nTime: ${at}`);
+      out.textContent = "Solvent is writing your report…";
+      const r = await fetch(url, { method: "POST", headers: { "X-Solvent-Holder": btoa(JSON.stringify({ signer: w.address, agent: lastCheck.wallet, at, signature })) } });
+      const res = await r.json();
+      if (!r.ok) throw new Error(res.error || "The report couldn't be written. Please try again.");
+      out.innerHTML = `<div class="report">${renderReport(res.report.markdown)}</div><p class="footnote">Free for $SOLVENT holders · written by ${esc(MODEL(res.report.model))} and paid for from Solvent's own budget</p>`;
+      return;
+    }
     const [q, web3] = await Promise.all([fetch(url, { method: "POST" }), loadWeb3()]);
     if (q.status !== 402) throw new Error("Reports aren't available right now. Please try again later.");
     const quote = JSON.parse(atob(q.headers.get("PAYMENT-REQUIRED")));
