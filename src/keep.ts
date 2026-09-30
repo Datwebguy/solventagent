@@ -91,7 +91,14 @@ export async function keepBooks(log: (s: string) => void = console.log): Promise
   if (env.SOLVENT_AUTOPILOT) throw new Error("The keeper never moves funds; unset SOLVENT_AUTOPILOT");
 
   // One writer at a time: when the always-on server is publishing the books, the timers stand down.
-  if (await serverIsPublishing(token)) {
+  let publishing: boolean;
+  try {
+    publishing = await serverIsPublishing(token);
+  } catch (err) {
+    log(`couldn't read the server's check-in (${err instanceof Error ? err.message : err}); skipping this run`);
+    return { ran: false, reason: "couldn't read the server's check-in" };
+  }
+  if (publishing) {
     log("the always-on server is publishing the books; nothing to do here");
     return { ran: false, reason: "the always-on server is publishing the books" };
   }

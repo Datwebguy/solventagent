@@ -52,8 +52,9 @@ export async function writeHeartbeat(token = env.BLOB_READ_WRITE_TOKEN): Promise
 }
 
 /** Whether the always-on server is publishing right now (used by the timers). */
+/** Throws when the check-in can't be read, so a timer never takes over just because storage was slow. */
 export async function serverIsPublishing(token: string, nowMs = Date.now()): Promise<boolean> {
-  const text = await readBlobText(HEARTBEAT_BLOB, token).catch(() => undefined);
+  const text = await readBlobText(HEARTBEAT_BLOB, token);
   if (!text) return false;
   try {
     return heartbeatFresh((JSON.parse(text) as { at?: string }).at, nowMs);

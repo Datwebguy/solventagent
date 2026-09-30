@@ -54,17 +54,30 @@ setInterval(() => {
     .catch((err) => log(`resync failed: ${err}`));
 }, 5 * 60_000);
 
-// Publish the books when they change (and at least every 10 minutes), booking paid-audit sales first.
+// Publish the books when they change (and every few hours regardless), booking paid-audit sales first.
+// Storage writes and listings are metered (the Hobby plan allows 2,000 a month), so each one is
+// spaced out: the check-in every 2 hours, the inbox of paid-report sales every 3 hours, and an
+// unchanged ledger republished every 6 hours.
+const HOUR = 60 * 60_000;
 if (env.BLOB_READ_WRITE_TOKEN && env.SOLVENT_PUBLISH) {
   let lastHead: string | undefined;
   let lastAt = 0;
+  let lastBeat = 0;
+  let lastInbox = 0;
   const tick = async () => {
     try {
-      await writeHeartbeat().catch((err) => log(`heartbeat failed: ${err instanceof Error ? err.message : err}`));
-      const sales = await ingestInbox(ledger);
-      if (sales) log(`booked ${sales} paid audit sale(s)`);
+      if (Date.now() - lastBeat >= 2 * HOUR) {
+        await writeHeartbeat()
+          .then(() => (lastBeat = Date.now()))
+          .catch((err) => log(`heartbeat failed: ${err instanceof Error ? err.message : err}`));
+      }
+      if (Date.now() - lastInbox >= 3 * HOUR) {
+        const sales = await ingestInbox(ledger);
+        lastInbox = Date.now();
+        if (sales) log(`booked ${sales} paid audit sale(s)`);
+      }
       const head = ledger.head()?.hash;
-      if (head !== lastHead || Date.now() - lastAt > 10 * 60_000) {
+      if (head !== lastHead || Date.now() - lastAt >= 6 * HOUR) {
         await publish(ledger, meter.reserveUsd);
         lastHead = head;
         lastAt = Date.now();
@@ -74,16 +87,22 @@ if (env.BLOB_READ_WRITE_TOKEN && env.SOLVENT_PUBLISH) {
     }
   };
   void tick();
-  setInterval(tick, 2 * 60_000);
+  setInterval(tick, 15 * 60_000);
 }
 
 // Hourly treasury cycle. It only moves funds when SOLVENT_AUTOPILOT=1; otherwise it logs the plan.
+let lastSavedState: string | undefined;
 if (existsSync("solvent.policy.json")) {
   const cycle = async () => {
     try {
       const r = await runCycle({ execute: env.SOLVENT_AUTOPILOT, log });
       for (const t of r.txs) if (t.kind === "compute_topup" || t.kind === "seal_share") await meter.resync();
-      if (env.BLOB_READ_WRITE_TOKEN && env.SOLVENT_PUBLISH) await saveStateToBlob(readState());
+      // Saved only when it changed: every save is a metered storage write.
+      const state = JSON.stringify(readState());
+      if (env.BLOB_READ_WRITE_TOKEN && env.SOLVENT_PUBLISH && state !== lastSavedState) {
+        await saveStateToBlob(JSON.parse(state));
+        lastSavedState = state;
+      }
     } catch (err) {
       log(`cycle failed: ${err instanceof Error ? err.message : err}`);
     }
